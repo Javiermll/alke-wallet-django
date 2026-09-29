@@ -1,0 +1,15 @@
+# Entorno virtual: cada persona crea el suyo
+venv/
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+
+# Base de datos local de SQLite (son datos de prueba, no código)
+db.sqlite3
+
+# Contraseñas y configuración privada (lo crearemos en la etapa 1)
+.env
+
+# Configuración personal del editor
+.vscode/
