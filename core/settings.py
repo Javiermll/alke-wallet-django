@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'gestion',   # Nuestra app; sin esta línea Django no reconoce sus modelos
 ]
 
 MIDDLEWARE = [
