@@ -11,10 +11,12 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os # "os" permite leer variables de entorno del sistema
+from dotenv import load_dotenv  # load_dotenv lee el archivo .env y carga sus valores como variables de entorno
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(BASE_DIR / '.env')   # Carga las variables del archivo .env que está en la raíz del proyecto
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -72,12 +74,42 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database
+# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
+
+
+# Lee del .env qué motor usar; si la variable no existe, usa "sqlite" por defecto
+DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite')
+
+# Si en el .env pusimos "postgres", configuramos la conexión a PostgreSQL
+if DB_ENGINE == 'postgres':
+    DATABASES = {
+        'default': {
+            # Le dice a Django que use el adaptador de PostgreSQL (psycopg2)
+            'ENGINE': 'django.db.backends.postgresql',
+            # Nombre de la base de datos que creamos en el paso 1
+            'NAME': os.getenv('DB_NAME'),
+            # Usuario de PostgreSQL
+            'USER': os.getenv('DB_USER'),
+            # Contraseña de ese usuario
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            # Dónde corre PostgreSQL (localhost = tu propio equipo)
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            # Puerto de PostgreSQL (5432 es el estándar)
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
+# En cualquier otro caso, usamos SQLite (un archivo db.sqlite3 en la raíz)
+else:
+    DATABASES = {
+        'default': {
+            # Le dice a Django que use el adaptador de SQLite (viene incluido)
+            'ENGINE': 'django.db.backends.sqlite3',
+            # Ruta del archivo donde SQLite guarda los datos
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 
 # Password validation
