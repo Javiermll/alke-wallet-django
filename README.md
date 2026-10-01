@@ -12,7 +12,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 | 1 | Conexión a base de datos (SQLite y PostgreSQL) | Completada |
 | 2 | App `gestion` y modelos | Completada |
 | 3 | Migraciones en SQLite y PostgreSQL | Completada |
-| 4 | Consultas personalizadas (`filter`, `exclude`, `annotate`, `raw()`, cursores) | Pendiente |
+| 4 | Consultas personalizadas (`filter`, `exclude`, `annotate`, `raw()`, cursores) | Completada |
 | 5 | Panel de administración | Pendiente |
 | 6 | Vistas CRUD basadas en clases y templates | Pendiente |
 | 7 | Autenticación y archivos estáticos | Pendiente |
@@ -25,7 +25,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 |---|---|---|
 | Python | 3.14.6 | Lenguaje base |
 | Django | 6.1.1 | Framework web |
-| psycopg2-binary | 2.9.13 | Adaptador entre Django y PostgreSQL |
+| psycopg | 3.3.6 | Adaptador entre Django y PostgreSQL (reemplaza a `psycopg2-binary`; ver incidencia de la etapa 4) |
 | python-dotenv | 1.2.3 | Lectura de credenciales desde el archivo `.env` |
 | PostgreSQL | 17 | Base de datos de producción |
 | SQLite | incluido en Python | Base de datos de desarrollo |
@@ -95,7 +95,17 @@ Para usar PostgreSQL, crear antes la base de datos vacía (`CREATE DATABASE alke
 python manage.py migrate
 ```
 
-### 6. Ejecutar el servidor
+### 6. Cargar datos de demostración (opcional)
+
+```powershell
+# Carga clientes, cuentas, contactos y movimientos de ejemplo (se puede repetir sin duplicar)
+python manage.py poblar_datos
+
+# Ejecuta todas las consultas del proyecto y muestra el resultado
+python manage.py demo_consultas
+```
+
+### 7. Ejecutar el servidor
 
 ```powershell
 # Levanta el servidor de desarrollo en http://127.0.0.1:8000/
@@ -112,9 +122,14 @@ alke_wallet/
 │   ├── asgi.py
 │   └── wsgi.py
 ├── gestion/                   # App principal con la lógica del negocio
+│   ├── management/
+│   │   └── commands/
+│   │       ├── poblar_datos.py    # Carga datos de demostración sin duplicar
+│   │       └── demo_consultas.py  # Ejecuta y muestra todas las consultas
 │   ├── migrations/
 │   │   └── 0001_initial.py    # Migración inicial: crea las 5 tablas de la app
 │   ├── models.py              # Modelos: Moneda, Cliente, Contacto, Cuenta, Transaccion
+│   ├── consultas.py           # Consultas reutilizables: ORM, raw() y cursor
 │   ├── admin.py               # Panel de administración (etapa 5)
 │   ├── views.py               # Vistas (etapa 6)
 │   └── tests.py               # Pruebas (etapa 8)
@@ -200,6 +215,7 @@ git commit -m "Configuración inicial del proyecto Django"
 - **Nombre `core`:** el paquete interno se llama `core` para evitar la estructura `alke_wallet/alke_wallet/`, que resulta confusa.
 - **`.gitignore`:** excluye `venv/`, `__pycache__/`, `db.sqlite3`, `.env` y `.vscode/`. El entorno virtual y las credenciales nunca se versionan.
 - **`requirements.txt`:** permite reconstruir el entorno en otro equipo con un solo comando.
+- **Adaptador de PostgreSQL:** al inicio se instaló `psycopg2-binary`. En la etapa 4 se reemplazó por `psycopg` (ver la incidencia de esa etapa).
 
 **Incidencia resuelta:** en este equipo, una política de control de aplicaciones de Windows bloquea `pip.exe` dentro del entorno virtual.
 
@@ -269,7 +285,7 @@ DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite')
 if DB_ENGINE == 'postgres':
     DATABASES = {
         'default': {
-            # Adaptador de PostgreSQL (psycopg2)
+            # Adaptador de PostgreSQL (psycopg)
             'ENGINE': 'django.db.backends.postgresql',
             # Nombre de la base de datos, usuario y contraseña
             'NAME': os.getenv('DB_NAME'),
@@ -575,14 +591,316 @@ Estos datos de prueba se conservan en ambas bases para las consultas de la etapa
 
 ![Prueba en la shell con PostgreSQL](docs/capturas/15_prueba_shell_postgresql.png)
 
+### Etapa 4: consultas personalizadas
+
+**Objetivo:** acceder y manipular datos con el ORM de Django y con SQL propio: CRUD desde la shell, filtros avanzados, anotaciones y agregaciones, `raw()` y cursores.
+
+**Rama de trabajo:** `feature/consultas`. No se modificó ningún modelo, por lo que esta etapa no genera migraciones nuevas.
+
+**Decisiones:**
+
+| Tema | Elegida | Alternativa descartada | Motivo |
+|---|---|---|---|
+| Datos de prueba | Comando propio `poblar_datos`, repetible sin duplicar | Cargarlos a mano en la shell o con un fixture JSON | Con pocos datos, los filtros y las anotaciones no muestran nada. El comando funciona igual en SQLite y PostgreSQL |
+| Dónde viven las consultas | Funciones en `gestion/consultas.py` | `Manager` o `QuerySet` propio en `models.py` | Más simple, y se reutilizan después en las vistas |
+| Valores en el SQL propio | Siempre parámetros `%s` | Pegar el texto dentro del SQL | Evita la inyección SQL |
+| Prueba en ambos motores | Comando `demo_consultas` | Solo pruebas unitarias | Sirve como demostración funcional y compara SQLite con PostgreSQL con un solo comando |
+
+#### 4.1 Datos de demostración: `poblar_datos`
+
+El comando `python manage.py poblar_datos` carga clientes, cuentas, contactos y movimientos de ejemplo. Usa `get_or_create` con un campo único (código, número de cuenta, descripción o usuario), por lo que **se puede ejecutar varias veces sin duplicar datos**. Las fechas de los movimientos se reparten en los últimos 60 días, para poder probar filtros por fecha.
+
+| Tabla | Total en la base |
+|---|---|
+| Monedas | 2 (CLP y USD) |
+| Clientes | 5 |
+| Cuentas | 7 |
+| Contactos | 5 |
+| Transacciones | 18 |
+
+Saldos resultantes:
+
+| Cuenta | Dueño | Moneda | Saldo |
+|---|---|---|---|
+| 0001 | Ana García | CLP | 115000 |
+| 0002 | Luis Pérez | CLP | 60000 |
+| 0003 | Ana García | USD | 400 |
+| 0004 | Carla Soto | CLP | 140000 |
+| 0005 | Diego Rojas | CLP | 125000 |
+| 0006 | Diego Rojas | USD | 400 |
+| 0007 | Marta Vega | CLP | 95000 |
+
+Dos datos se dejaron a propósito para probar más adelante: Luis y Diego tienen teléfono `NULL`, y Marta lo tiene como texto vacío (`''`).
+
+La segunda ejecución informa `0` registros nuevos, lo que demuestra que no duplica.
+
+![Primera ejecución de poblar_datos](docs/capturas/16_poblar_datos_sqlite.png)
+
+![Segunda ejecución: sin registros nuevos](docs/capturas/17_poblar_datos_repetido.png)
+
+![poblar_datos en PostgreSQL](docs/capturas/18_poblar_datos_postgresql.png)
+
+#### 4.2 CRUD desde la shell
+
+Se hizo sobre un cliente temporal, **Pedro Prueba**, que se crea y se borra, para dejar intactos los datos de demostración.
+
+```python
+# CREATE: create() guarda de inmediato; Modelo(...) más save() lo hace en dos pasos
+usuario = User.objects.create_user(username='pedro', password='<contraseña_de_prueba>')
+pedro = Cliente(usuario=usuario, nombre='Pedro Prueba', email='pedro@example.com')
+pedro.save()
+
+# READ: get() devuelve un registro; filter() devuelve una lista; exists() devuelve True o False
+Cliente.objects.get(email='pedro@example.com')
+Cliente.objects.filter(email='pedro@example.com').exists()
+
+# UPDATE: save() guarda un objeto; update() modifica directo en la base y devuelve las filas cambiadas
+pedro.telefono = '555123456'
+pedro.save()
+Cuenta.objects.filter(numero='0008').update(activa=False)
+
+# DELETE: primero se borra lo que protege (movimiento, cuenta) y luego el usuario
+deposito.delete()
+cuenta.delete()
+usuario.delete()
+```
+
+| Operación | Qué se comprobó |
+|---|---|
+| Create | El objeto no tiene id hasta que se guarda; el saldo de un depósito de 10000 es `10000` |
+| Read | `get()` falla con `DoesNotExist` si no hay registro; las relaciones se recorren en ambos sentidos, incluida la 1:1 |
+| Update | `update()` no actualiza el objeto que ya está en memoria hasta usar `refresh_from_db()` |
+| Validación | `full_clean()` detecta `Un depósito no debe tener cuenta origen.` y el monto mínimo |
+| Delete | `PROTECT` impide borrar una moneda con cuentas y una cuenta con movimientos; `CASCADE` borra el cliente al borrar su usuario |
+
+Al terminar, la base quedó como antes: 5 clientes, 7 cuentas y 18 movimientos.
+
+![CRUD: crear](docs/capturas/19_crud_create.png)
+
+![CRUD: leer](docs/capturas/20_crud_read.png)
+
+![CRUD: actualizar](docs/capturas/21_crud_update.png)
+
+![Validación con full_clean()](docs/capturas/22_crud_validar.png)
+
+![CRUD: borrar, con PROTECT y CASCADE](docs/capturas/23_crud_delete.png)
+
+#### 4.3 Filtros avanzados
+
+`filter()` y `exclude()` encadenan condiciones; la coma equivale a **Y**, y para **O** y **NO** se usa `Q` con `|` y `~`. El doble guion bajo cumple dos funciones: `campo__operador` compara, y `relacion__campo` cruza tablas.
+
+| Consulta | Resultado |
+|---|---|
+| `monto__gt=50000` | 4 movimientos |
+| `monto__gte=50000` | 6 |
+| `monto__range=(10000, 30000)` | 7 |
+| `descripcion__icontains='retiro'` | 3 |
+| `nombre__istartswith='a'` (clientes) | Ana García |
+| `fecha__gte` hace 14 días | 8 (depende de la fecha en que se ejecute) |
+| `tipo='transferencia', monto__gte=20000` | 3 |
+| `exclude(tipo='deposito')` | 10 |
+| `Q(tipo='retiro') \| Q(monto__gte=100000)` | 6 |
+| `~Q(tipo='deposito') & Q(monto__lt=20000)` | 5 |
+| `cuenta_destino__cliente__nombre='Ana García'` | 5 |
+| Cuentas con `moneda__codigo='USD'` | 0003 y 0006 |
+| Clientes con `cuentas__moneda__codigo='USD'` | Ana García y Diego Rojas |
+| Clientes con `fichas_de_agenda__isnull=True` | Marta Vega |
+
+**`NULL` frente a texto vacío:**
+
+| Filtro | Clientes |
+|---|---|
+| `telefono__isnull=True` | Luis Pérez y Diego Rojas |
+| `telefono=''` | Marta Vega |
+| `telefono__isnull=False` | Ana García, Carla Soto y **Marta Vega** |
+| `telefono__isnull=False` con `exclude(telefono='')` | Ana García y Carla Soto |
+
+`isnull=False` cuenta como "con teléfono" a Marta, que en realidad no tiene. Para detectar un teléfono escrito hay que descartar también el texto vacío.
+
+Los querysets son perezosos: no consultan la base hasta que se usan, y `.query` muestra el SQL que se ejecutaría.
+
+![Operadores de campo](docs/capturas/24_filtros_operadores.png)
+
+![exclude y Q](docs/capturas/25_filtros_exclude_q.png)
+
+![Filtros a través de relaciones](docs/capturas/26_filtros_relaciones.png)
+
+![NULL frente a texto vacío](docs/capturas/27_filtros_null_vacio.png)
+
+![Orden, límite y SQL generado](docs/capturas/28_filtros_orden_sql.png)
+
+#### 4.4 Anotaciones y agregaciones
+
+`aggregate()` devuelve **un** resultado para toda la consulta. `annotate()` agrega un cálculo **por fila**, y combinado con `values()` lo hace **por grupo** (equivale a `GROUP BY`). Los montos en pesos y en dólares no se suman entre sí, por lo que los totales se filtran por moneda.
+
+Resumen global de los movimientos en pesos:
+
+| Cálculo | Resultado |
+|---|---|
+| Cantidad | 15 |
+| Total | 815000 |
+| Promedio | ≈ 54333,33 |
+| Mayor y menor | 200000 y 5000 |
+| Depósitos, transferencias y retiros | 610000, 130000 y 75000 (con `Sum(..., filter=Q(...))`) |
+
+Por grupo y por fila:
+
+| Consulta | Resultado |
+|---|---|
+| Movimientos por tipo (todas las monedas) | Depósito 8, retiro 3, transferencia 7 |
+| Cuentas por cliente | Ana 2, Diego 2, Carla 1, Luis 1, Marta 1 |
+| Contactos agendados por cliente | Ana 2, Carla 1, Diego 1, Luis 1, Marta 0 |
+| Clientes con más de una cuenta (`num_cuentas__gt=1`) | Ana García y Diego Rojas |
+
+**La trampa del saldo.** Calcular las entradas y las salidas con dos `Sum` en un mismo `annotate` da resultados inflados. Django une las dos relaciones y cada movimiento se repite tantas veces como filas tiene el otro lado. La cuenta `0001` tiene 3 entradas y 2 salidas: cada entrada se cuenta 2 veces y cada salida 3 veces.
+
+| Cuenta | Entradas calculadas | Salidas calculadas | Entradas reales | Salidas reales |
+|---|---|---|---|---|
+| 0001 | 320000 | 135000 | 160000 | 45000 |
+| 0004 | 675000 | 255000 | 225000 | 85000 |
+| 0005 | 350000 | 100000 | 175000 | 50000 |
+| 0007 | 240000 | 50000 | 120000 | 25000 |
+
+Las cuentas con pocos movimientos salen bien, por lo que el error pasa desapercibido hasta revisar una cuenta con entradas y salidas múltiples.
+
+`Sum(distinct=True)` tampoco sirve: la cuenta `0002` recibió dos veces 30000 y contaría uno solo.
+
+**Solución:** dos subconsultas (`Subquery`), una para lo que entró y otra para lo que salió, y una resta. Se calcula en una sola consulta, y el resultado coincide con la propiedad `Cuenta.saldo` en las siete cuentas.
+
+![aggregate](docs/capturas/29_aggregate.png)
+
+![Agrupación por tipo](docs/capturas/30_group_by_tipo.png)
+
+![annotate sobre clientes](docs/capturas/31_annotate_clientes.png)
+
+![La trampa del saldo](docs/capturas/32_saldo_trampa.png)
+
+![Saldo correcto con subconsultas](docs/capturas/33_saldo_subqueries.png)
+
+#### 4.5 SQL propio: `raw()` y cursores
+
+| Herramienta | Devuelve | Cuándo conviene |
+|---|---|---|
+| `raw()` | Objetos del modelo (con `.nombre`, `.email`, etc.) | Cuando se quiere seguir usando el modelo |
+| Cursor | Filas planas (tuplas) | Reportes, conteos y modificaciones directas |
+
+```python
+# raw(): devuelve objetos Cliente; los valores van siempre como parámetros (%s)
+consulta = "SELECT * FROM gestion_cliente WHERE nombre LIKE %s ORDER BY nombre"
+Cliente.objects.raw(consulta, ['%a%'])
+
+# Cursor: devuelve filas planas; "with" lo cierra al terminar
+with connection.cursor() as cursor:
+    cursor.execute("SELECT COUNT(*) FROM gestion_cliente")
+    total = cursor.fetchone()[0]
+```
+
+**Resultados:**
+
+| Prueba | Resultado |
+|---|---|
+| `telefono IS NOT NULL` (ejemplo de la consigna) | Ana, Carla y **Marta** (teléfono vacío) |
+| Con `AND telefono <> ''` | Ana y Carla |
+| Inyección SQL con texto pegado en el SQL | 5 clientes (devuelve todos) |
+| El mismo texto como parámetro `%s` | 0 clientes |
+| Columna extra `COUNT(...) AS num_cuentas` | Disponible como `cliente.num_cuentas` |
+| `SELECT` sin la clave primaria | `FieldDoesNotExist: Raw query must include the primary key` |
+| Saldo por cuenta con cursor | Igual al del ORM en las siete cuentas |
+| `UPDATE ... WHERE numero = %s` con cursor | `rowcount` = 1; se revirtió después |
+
+Los parámetros `%s` tratan el valor como dato y nunca como código SQL. Pegar el texto dentro de la consulta permite que un valor malicioso cambie su condición, como ocurrió con el ejemplo de inyección.
+
+El cursor y `raw()` no pasan por `clean()` ni por la lógica del modelo, por lo que las modificaciones de datos de la aplicación irán por el ORM.
+
+![raw() básico](docs/capturas/34_raw_basico.png)
+
+![Parámetros e inyección SQL](docs/capturas/35_raw_parametros.png)
+
+![Columnas extra y clave primaria](docs/capturas/36_raw_columnas_extra.png)
+
+![Saldos con cursor](docs/capturas/37_cursor_saldos.png)
+
+![UPDATE con cursor](docs/capturas/38_cursor_update.png)
+
+#### 4.6 Consultas reutilizables y comando `demo_consultas`
+
+Las consultas quedaron como funciones en `gestion/consultas.py`, que se reutilizarán en las vistas de la etapa 6.
+
+| Función | Técnica |
+|---|---|
+| `movimientos_recientes(dias)` | `filter` con fecha |
+| `movimientos_de_cliente(cliente)` | `Q` con O sobre origen y destino |
+| `clientes_con_telefono()` | `exclude` de `NULL` y de texto vacío |
+| `clientes_sin_contactos()` | `isnull` sobre una relación inversa |
+| `clientes_con_numero_de_cuentas()` | `annotate` con `Count` |
+| `resumen_por_tipo(moneda)` | `values` más `annotate`, filtrado por moneda |
+| `cuentas_con_saldo()` | `annotate` con `Subquery` |
+| `clientes_con_telefono_sql()` | `raw()` |
+| `buscar_clientes_sql(texto)` | `raw()` con parámetros |
+| `saldos_sql()` | Cursor con SQL puro |
+
+El comando `python manage.py demo_consultas` ejecuta las diez y termina con un control que compara el saldo del ORM con el del SQL puro (`coinciden todas las cuentas: True`).
+
+**Resultados, idénticos en SQLite y PostgreSQL:**
+
+| Consulta | Resultado |
+|---|---|
+| Movimientos de los últimos 14 días | 8 (depende de la fecha) |
+| Movimientos de Ana García | 7 (tres depósitos y cuatro transferencias) |
+| Clientes con teléfono escrito | Ana García y Carla Soto |
+| Clientes sin contactos | Marta Vega |
+| Resumen en CLP | Depósito 6 (610000), retiro 3 (75000), transferencia 6 (130000) |
+| Resumen en USD | Depósito 2 (800), transferencia 1 (100) |
+| Nombres que contienen "ar" (`raw`) | Ana García, Carla Soto y Marta Vega |
+| Saldos por cuenta | Los de la tabla de la sección 4.1 |
+
+La única diferencia entre motores es el formato de los decimales: PostgreSQL muestra los montos con dos decimales (`115000.00`) y SQLite los muestra sin ellos (`115000`). El valor es el mismo.
+
+![demo_consultas en SQLite](docs/capturas/39_demo_consultas_sqlite.png)
+
+![demo_consultas en PostgreSQL](docs/capturas/40_demo_consultas_postgresql.png)
+
+**Incidencia resuelta: adaptador de PostgreSQL bloqueado.** Al probar `demo_consultas` en PostgreSQL apareció este error:
+
+```text
+ImportError: DLL load failed while importing _psycopg: Una directiva de Control de aplicaciones bloqueó este archivo.
+django.core.exceptions.ImproperlyConfigured: Error loading psycopg2 or psycopg module
+```
+
+Es la misma política de Windows que bloqueaba `pip.exe` en la etapa 0: impide cargar el archivo compilado de `psycopg2`. Django admite también `psycopg` (versión 3), que se instala sin archivos compilados propios y usa el `libpq.dll` que ya trae PostgreSQL.
+
+```powershell
+# Instala el adaptador de PostgreSQL en Python puro (versión 3)
+python -m pip install psycopg
+
+# Verifica que carga; debe imprimir la versión y la palabra "python"
+python -c "import psycopg; print(psycopg.__version__, psycopg.pq.__impl__)"
+
+# Retira el adaptador bloqueado y actualiza la lista de dependencias
+python -m pip uninstall psycopg2-binary -y
+python -m pip freeze | Out-File -Encoding utf8 requirements.txt
+```
+
+No fue necesario cambiar `settings.py`: el motor `django.db.backends.postgresql` prueba primero `psycopg` y recurre a `psycopg2` solo si no lo encuentra. La consigna menciona `psycopg2` como ejemplo de adaptador; `psycopg` cumple el mismo papel.
+
+**Reflexiones:**
+
+- **ORM frente a SQL propio:** el ORM resuelve casi todo y evita errores de sintaxis. El SQL propio ayuda a entender qué hay debajo y a escribir consultas complejas, como el saldo, que pueden hacerse igual con subconsultas del ORM.
+- **`NULL` no es lo mismo que texto vacío:** un formulario guarda un teléfono sin completar como `''`. La consulta de la consigna (`IS NOT NULL`) lo cuenta como si existiera. Hay que descartar ambos casos.
+- **Las agregaciones pueden mentir sin avisar:** dos `Sum` sobre relaciones distintas dan montos inflados sin ningún error. Conviene contrastar siempre con una cuenta conocida.
+- **Seguridad:** los parámetros `%s` son lo que separa una consulta segura de una vulnerable a inyección.
+- **Las validaciones no se aplican siempre:** `create()`, `update()` masivo y el cursor no ejecutan `clean()`. Solo actúan las restricciones de la base de datos. Las reglas de Python se aplican con `full_clean()`, en formularios y en el panel de administración.
+- **Sin dependencia del motor:** las diez consultas dan los mismos resultados con SQLite y con PostgreSQL, cada uno con su adaptador.
+
 ## Flujo de Git
 
 | Rama | Propósito | Estado |
 |---|---|---|
 | `main` | Código estable | Activa |
 | `feature/modelos` | Definición de modelos y migraciones | Fusionada con `main` (fast-forward) |
+| `feature/consultas` | Datos de demostración y consultas personalizadas | Fusionada con `main` |
 | `feature/crud` | Vistas y formularios | Pendiente |
 
 ## Próximas etapas
 
-Las secciones sobre consultas personalizadas, panel de administración, CRUD, autenticación, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
+Las secciones sobre panel de administración, CRUD, autenticación, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
