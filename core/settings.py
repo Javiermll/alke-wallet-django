@@ -135,9 +135,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# Idioma del sitio: español de Chile; afecta al panel de administración y a los mensajes de validación
+LANGUAGE_CODE = 'es-cl'
 
-TIME_ZONE = 'UTC'
+# Zona horaria para mostrar las fechas; la base de datos sigue guardando en UTC porque USE_TZ es True
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
