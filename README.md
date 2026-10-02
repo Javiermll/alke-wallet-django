@@ -13,7 +13,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 | 2 | App `gestion` y modelos | Completada |
 | 3 | Migraciones en SQLite y PostgreSQL | Completada |
 | 4 | Consultas personalizadas (`filter`, `exclude`, `annotate`, `raw()`, cursores) | Completada |
-| 5 | Panel de administración | Pendiente |
+| 5 | Panel de administración | Completada |
 | 6 | Vistas CRUD basadas en clases y templates | Pendiente |
 | 7 | Autenticación y archivos estáticos | Pendiente |
 | 8 | Pruebas | Pendiente |
@@ -105,12 +105,21 @@ python manage.py poblar_datos
 python manage.py demo_consultas
 ```
 
-### 7. Ejecutar el servidor
+### 7. Crear un superusuario (para el panel de administración)
+
+```powershell
+# Crea la cuenta con la que se entra al panel (pide usuario, correo y contraseña)
+python manage.py createsuperuser
+```
+
+### 8. Ejecutar el servidor
 
 ```powershell
 # Levanta el servidor de desarrollo en http://127.0.0.1:8000/
 python manage.py runserver
 ```
+
+El panel de administración está en `http://127.0.0.1:8000/admin/`.
 
 ## Arquitectura
 
@@ -127,10 +136,11 @@ alke_wallet/
 │   │       ├── poblar_datos.py    # Carga datos de demostración sin duplicar
 │   │       └── demo_consultas.py  # Ejecuta y muestra todas las consultas
 │   ├── migrations/
-│   │   └── 0001_initial.py    # Migración inicial: crea las 5 tablas de la app
+│   │   ├── 0001_initial.py    # Migración inicial: crea las 5 tablas de la app
+│   │   └── 0002_alter_cliente_options_alter_contacto_options_and_more.py  # Nombres legibles (sin cambios en las tablas)
 │   ├── models.py              # Modelos: Moneda, Cliente, Contacto, Cuenta, Transaccion
 │   ├── consultas.py           # Consultas reutilizables: ORM, raw() y cursor
-│   ├── admin.py               # Panel de administración (etapa 5)
+│   ├── admin.py               # Panel de administración: columnas, búsqueda, filtros y tablas anidadas
 │   ├── views.py               # Vistas (etapa 6)
 │   └── tests.py               # Pruebas (etapa 8)
 ├── docs/
@@ -892,6 +902,197 @@ No fue necesario cambiar `settings.py`: el motor `django.db.backends.postgresql`
 - **Las validaciones no se aplican siempre:** `create()`, `update()` masivo y el cursor no ejecutan `clean()`. Solo actúan las restricciones de la base de datos. Las reglas de Python se aplican con `full_clean()`, en formularios y en el panel de administración.
 - **Sin dependencia del motor:** las diez consultas dan los mismos resultados con SQLite y con PostgreSQL, cada uno con su adaptador.
 
+### Etapa 5: panel de administración
+
+**Objetivo:** aprovechar `django.contrib.admin` para administrar los datos sin programar pantallas: configurar el idioma, registrar los modelos con columnas, búsqueda y filtros, y crear un superusuario.
+
+**Rama de trabajo:** `feature/admin`. Esta etapa agrega una segunda migración, la `0002`, que no modifica ninguna tabla.
+
+**Decisiones:**
+
+| Tema | Elegida | Alternativa descartada | Motivo |
+|---|---|---|---|
+| Idioma y zona horaria | `es-cl` y `America/Santiago` | Inglés y UTC | El panel y los mensajes de validación salen en español, y las fechas en hora local |
+| Nombres de los modelos | `verbose_name` en cada `Meta`, con la migración `0002` | Dejar los nombres por defecto | Sin esto, el panel mostraría "Transaccions" y "Gestion" |
+| Saldo en el panel | `cuentas_con_saldo()` de la etapa 4 | La propiedad `Cuenta.saldo` | Una sola consulta para todo el listado, en vez de dos por cuenta |
+| Superusuario | Crearlo en cada base de datos | Crearlo solo en una | Cada base guarda sus propios usuarios |
+
+#### 5.1 Idioma y zona horaria
+
+```python
+# Idioma del sitio: español de Chile; afecta al panel de administración y a los mensajes de validación
+LANGUAGE_CODE = 'es-cl'
+
+# Zona horaria para mostrar las fechas; la base de datos sigue guardando en UTC porque USE_TZ es True
+TIME_ZONE = 'America/Santiago'
+```
+
+| Comprobación | Resultado |
+|---|---|
+| `python manage.py check` | Sin problemas |
+| `timezone.localtime()` | La hora actual, terminada en `-03:00` (horario de verano de Chile) |
+| `gettext('This field is required.')` | `Este campo es obligatorio.` |
+
+La zona horaria solo cambia cómo se **muestran** las fechas: la base de datos sigue guardándolas en UTC, por lo que las consultas de la etapa 4 no se ven afectadas. Django no trae una traducción propia para Chile y usa la del español general.
+
+![Idioma y zona horaria en settings.py](docs/capturas/41_settings_idioma_zona.png)
+
+![Pantalla de inicio de sesión del panel, en español](docs/capturas/42_admin_login_es.png)
+
+#### 5.2 Nombres legibles y migración `0002`
+
+Cada modelo recibió su nombre en singular y plural dentro de `class Meta`:
+
+```python
+# Nombres legibles que se muestran en el panel de administración
+class Meta:
+    verbose_name = 'transacción'
+    verbose_name_plural = 'transacciones'
+    ordering = ['-fecha']
+```
+
+El nombre de la app se definió en `gestion/apps.py`:
+
+```python
+class GestionConfig(AppConfig):
+    name = 'gestion'
+    # Nombre que se muestra en el menú del panel de administración
+    verbose_name = 'Gestión'
+```
+
+| Comando | Resultado |
+|---|---|
+| `makemigrations gestion` | Crea `0002_alter_cliente_options_alter_contacto_options_and_more.py`, con cinco líneas `~ Change Meta options on ...` |
+| `sqlmigrate gestion 0002` | Solo comentarios `-- (no-op)`: ningún cambio en las tablas |
+| `migrate` | `Applying gestion.0002_... OK` (en SQLite y en PostgreSQL) |
+| `showmigrations gestion` | `[X] 0001_initial` y `[X] 0002_...` |
+| `makemigrations --check --dry-run` | `No changes detected` |
+
+Django guarda los nombres legibles dentro de las migraciones, por eso cambiarlos genera una migración nueva, aunque no ejecute SQL. Es un ejemplo del historial versionado del esquema.
+
+![Migración 0002 generada y su SQL vacío](docs/capturas/43_migracion_0002.png)
+
+![Migración 0002 aplicada](docs/capturas/44_migrate_0002.png)
+
+#### 5.3 Registro de los modelos: `gestion/admin.py`
+
+| Modelo | Columnas | Búsqueda | Filtros | Extra |
+|---|---|---|---|---|
+| `Moneda` | código, nombre, símbolo | código, nombre | | |
+| `Cliente` | nombre, email, teléfono, cantidad de cuentas | nombre, email, usuario de login | | Sus cuentas y contactos aparecen dentro de su ficha |
+| `Cuenta` | número, cliente, moneda, saldo, activa, fecha | número, nombre y email del dueño | moneda, activa | Saldo calculado en una sola consulta |
+| `Transaccion` | id, tipo, origen, destino, monto, descripción, fecha | descripción, números de cuenta | tipo | Navegación por año, mes y día |
+| `Contacto` | propietario, agendado, apodo, fecha | los dos nombres y el apodo | | |
+
+Tres piezas nuevas:
+
+| Pieza | Para qué sirve |
+|---|---|
+| Inline (`TabularInline`) | Muestra una tabla relacionada dentro de otra ficha: las cuentas y los contactos de cada cliente |
+| `get_queryset` | Cambia qué registros trae el listado, para reutilizar las consultas de la etapa 4 |
+| `@admin.display` | Convierte un método en una columna del listado, ordenable con un clic |
+
+```python
+# Los contactos del cliente, en una tabla dentro de su ficha
+class ContactoInline(admin.TabularInline):
+    model = Contacto
+    # Contacto tiene dos claves hacia Cliente; fk_name dice cuál une con esta ficha
+    fk_name = 'propietario'
+    fields = ('agendado', 'apodo')
+    extra = 0
+```
+
+```python
+# En CuentaAdmin: el listado reutiliza la consulta de la etapa 4, que calcula todos los saldos de una vez
+def get_queryset(self, request):
+    return consultas.cuentas_con_saldo().select_related('cliente', 'moneda')
+
+# Columna del saldo, ordenable con un clic en su título
+@admin.display(description='Saldo', ordering='saldo_calculado')
+def saldo_actual(self, obj):
+    # Una cuenta nueva todavía no tiene el saldo calculado, así que se muestra un guion
+    return getattr(obj, 'saldo_calculado', '-')
+```
+
+`Contacto` tiene dos claves hacia `Cliente` (propietario y agendado), por eso el inline necesita `fk_name`: sin él, Django no sabría cuál usar.
+
+![Configuración de admin.py](docs/capturas/45_admin_py.png)
+
+![Modelos registrados en el panel](docs/capturas/46_admin_registrados.png)
+
+#### 5.4 Superusuario y recorrido del panel
+
+```powershell
+# Crea la cuenta de administración (pide usuario, correo y contraseña)
+python manage.py createsuperuser
+```
+
+Los clientes de demostración (Ana, Luis, etc.) son usuarios comunes y no pueden entrar al panel: solo lo hace el personal. El superusuario se creó en SQLite y en PostgreSQL, porque cada base guarda sus propios usuarios.
+
+**Recorrido del panel:**
+
+| Pantalla | Resultado |
+|---|---|
+| Inicio | Dos grupos: Autenticación y autorización, y Gestión (Clientes, Contactos, Cuentas, Monedas, Transacciones) |
+| Clientes | 5 clientes, del más nuevo al más antiguo, con su cantidad de cuentas (ordenable) |
+| Ficha de Ana García | Tablas con sus cuentas `0001` (CLP) y `0003` (USD) y sus contactos Lucho y Carli |
+| Cuentas | Saldos iguales a los de la etapa 4; filtro por moneda; orden por saldo |
+| Transacciones | 18 movimientos; filtro por tipo (3 retiros); navegación por fecha; búsqueda por número de cuenta |
+| Contactos | 5 fichas |
+
+**Ejercicio de CRUD en el panel**, con un cliente temporal (usuario `tomas`, cuenta `0009`):
+
+| Operación | Resultado |
+|---|---|
+| Crear | Usuario, cliente con su cuenta (tabla anidada) y un depósito de 25000; el saldo de la `0009` pasa a 25000 |
+| Editar | Cambio de teléfono del cliente y desactivación de la cuenta |
+| Validar | Los casos inválidos se rechazan con su mensaje (tabla siguiente) |
+| Borrar | Borrar una cuenta con movimientos muestra una pantalla de protección; al borrar primero el depósito y luego el usuario, el cliente y su cuenta se borran en cascada |
+
+Al terminar, la base volvió a tener 5 clientes, 7 cuentas y 18 movimientos.
+
+**Validaciones de `clean()` en los formularios del panel:**
+
+| Caso | Mensaje |
+|---|---|
+| Depósito con cuenta origen | `Un depósito no debe tener cuenta origen.` |
+| Retiro sin cuenta origen | `Un retiro necesita una cuenta origen.` |
+| Transferencia entre monedas distintas | `Las cuentas deben tener la misma moneda.` |
+| Transferencia a la misma cuenta | `La cuenta origen y la destino deben ser distintas.` |
+| Monto cero | `Asegúrese de que este valor es mayor o igual a 0.01.` |
+| Contacto a sí mismo | `Un cliente no puede agendarse a sí mismo.` |
+| Contacto duplicado | `Contacto con este Propietario y Agendado ya existe.` |
+
+Esto confirma lo que quedó pendiente de la etapa 3: las reglas de `clean()` no actúan al crear desde la shell, pero sí en los formularios.
+
+![Inicio del panel](docs/capturas/47_admin_inicio.png)
+
+![Listado de clientes con su cantidad de cuentas](docs/capturas/48_admin_clientes.png)
+
+![Ficha de un cliente con sus tablas anidadas](docs/capturas/49_admin_cliente_inlines.png)
+
+![Listado de cuentas con saldos y filtros](docs/capturas/50_admin_cuentas_saldo.png)
+
+![Listado de transacciones con filtro y navegación por fecha](docs/capturas/51_admin_transacciones.png)
+
+![Validación en un formulario del panel](docs/capturas/52_admin_validaciones.png)
+
+![Borrado protegido de una cuenta con movimientos](docs/capturas/53_admin_borrado_protegido.png)
+
+![Panel funcionando sobre PostgreSQL](docs/capturas/54_admin_postgresql.png)
+
+**Limitaciones conocidas del panel:**
+
+- **No revisa el saldo disponible.** Un retiro o una transferencia mayor que el saldo se guarda y deja la cuenta en negativo. Esa regla se aplicará en las vistas, dentro de una operación atómica (etapa 6), por lo que el panel queda como herramienta para quienes administran.
+- **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso.
+
+**Reflexiones:**
+
+- **Mucho resultado con poco código:** el panel completo, con búsqueda, filtros, tablas anidadas y validaciones, salió de unas 140 líneas en `admin.py`, reutilizando los modelos y las consultas.
+- **Las validaciones del modelo se aprovechan solas:** `clean()` y las restricciones definidas en la etapa 2 actúan en el panel sin escribir nada más.
+- **`PROTECT` y `CASCADE` se ven en acción:** el panel explica por qué no se puede borrar una cuenta con historial y qué se borraría en cascada, antes de confirmar.
+- **Reutilizar consultas:** `cuentas_con_saldo()` sirve en el panel igual que en el comando de demostración, lo que justifica haberla dejado como función.
+
 ## Flujo de Git
 
 | Rama | Propósito | Estado |
@@ -899,8 +1100,9 @@ No fue necesario cambiar `settings.py`: el motor `django.db.backends.postgresql`
 | `main` | Código estable | Activa |
 | `feature/modelos` | Definición de modelos y migraciones | Fusionada con `main` (fast-forward) |
 | `feature/consultas` | Datos de demostración y consultas personalizadas | Fusionada con `main` |
+| `feature/admin` | Idioma, nombres legibles y panel de administración | Fusionada con `main` |
 | `feature/crud` | Vistas y formularios | Pendiente |
 
 ## Próximas etapas
 
-Las secciones sobre panel de administración, CRUD, autenticación, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
+Las secciones sobre CRUD, autenticación, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
