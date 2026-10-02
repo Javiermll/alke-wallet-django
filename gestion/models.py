@@ -12,15 +12,16 @@ from decimal import Decimal  # Importa Decimal, que guarda montos de dinero sin 
 # MONEDA: tabla de referencia (CLP, USD, etc.)
 # ---------------------------------------------------------
 class Moneda(models.Model):
-    # Código de 3 letras; unique=True impide repetir el mismo código
-    codigo = models.CharField(max_length=3, unique=True)
+    codigo = models.CharField(max_length=3, unique=True)  # Código de 3 letras; unique=True impide repetir el mismo código
+    nombre = models.CharField(max_length=50)  # Nombre completo de la moneda
+    simbolo = models.CharField(max_length=5)  # Símbolo para mostrar, por ejemplo $ o US$
 
-    # Nombre completo de la moneda
-    nombre = models.CharField(max_length=50)
+    # Nombres legibles que se muestran en el panel de administración
+    class Meta:
+        verbose_name = 'moneda'
+        verbose_name_plural = 'monedas'
 
-    # Símbolo para mostrar, por ejemplo $ o US$
-    simbolo = models.CharField(max_length=5)
-
+    
     # Al imprimir una moneda se muestra su código
     def __str__(self):
         return self.codigo
@@ -53,6 +54,11 @@ class Cliente(models.Model):
         related_name='agendado_por',
     )
 
+    # Nombres legibles que se muestran en el panel de administración
+    class Meta:
+        verbose_name = 'cliente'
+        verbose_name_plural = 'clientes'
+
     # Texto que se muestra cuando Django imprime un cliente (admin, shell, listas)
     def __str__(self):
         return self.nombre
@@ -83,6 +89,9 @@ class Contacto(models.Model):
 
     # Configuración extra del modelo
     class Meta:
+        # Nombres legibles que se muestran en el panel de administración
+        verbose_name = 'contacto'
+        verbose_name_plural = 'contactos'
         # Reglas que la propia base de datos hace cumplir
         constraints = [
             # No se puede agendar dos veces a la misma persona
@@ -123,6 +132,11 @@ class Cuenta(models.Model):
     numero = models.CharField(max_length=20, unique=True)  # Número de cuenta, único en todo el sistema
     activa = models.BooleanField(default=True)  # Indica si la cuenta está en uso (True) o desactivada (False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha y hora que se llenan solas al crear la cuenta
+
+    # Nombres legibles que se muestran en el panel de administración
+    class Meta:
+        verbose_name = 'cuenta'
+        verbose_name_plural = 'cuentas'
 
     # El saldo NO es una columna: se calcula cada vez que se pide
     # @property permite usarlo como un dato más: cuenta.saldo (sin paréntesis)
@@ -183,6 +197,9 @@ class Transaccion(models.Model):
 
     # Configuración extra del modelo
     class Meta:
+        # Nombres legibles que se muestran en el panel de administración
+        verbose_name = 'transacción'
+        verbose_name_plural = 'transacciones'
         # El signo menos ordena de la más nueva a la más antigua
         ordering = ['-fecha']
         # Regla que la base de datos hace cumplir aunque se guarde desde la shell.

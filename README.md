@@ -40,8 +40,8 @@ Los comandos están escritos para **PowerShell en Windows**.
 
 ```powershell
 # Descarga el proyecto y entra a su carpeta
-git clone <URL_DEL_REPOSITORIO>
-cd alke_wallet
+git clone https://github.com/Javiermll/alke-wallet-django.git
+cd alke-wallet-django
 ```
 
 ### 2. Crear y activar el entorno virtual
