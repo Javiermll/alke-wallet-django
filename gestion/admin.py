@@ -86,6 +86,17 @@ class TransaccionAdmin(admin.ModelAdmin):
     readonly_fields = ('fecha',) # La fecha se llena sola, así que solo se muestra
     list_select_related = ('cuenta_origen__moneda', 'cuenta_destino__moneda')  # Trae las cuentas y sus monedas en la misma consulta, para que el listado sea rápido
 
+    # Un movimiento ya creado no se edita: forma parte del historial
+    def has_change_permission(self, request, obj=None):
+        # Sin movimiento concreto (obj es None) Django consulta si puede mostrar el listado: se permite
+        # Con un movimiento concreto se rechaza, así que se abre solo en modo lectura
+        return obj is None
+
+    # Un movimiento ya creado tampoco se borra
+    def has_delete_permission(self, request, obj=None):
+        # Siempre se rechaza; así desaparecen los botones y la acción de eliminar
+        return False
+
 
 # Registra Contacto en el panel
 @admin.register(Contacto)
