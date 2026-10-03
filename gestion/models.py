@@ -195,7 +195,7 @@ class Transaccion(models.Model):
     descripcion = models.CharField(max_length=200, blank=True) # Texto libre opcional para anotar el motivo
     fecha = models.DateTimeField(auto_now_add=True)  # Fecha y hora que se llenan solas al crear la transacción
 
-    # Configuración extra del modelo
+        # Configuración extra del modelo
     class Meta:
         # Nombres legibles que se muestran en el panel de administración
         verbose_name = 'transacción'
@@ -237,6 +237,23 @@ class Transaccion(models.Model):
             # Solo se transfiere entre cuentas de la misma moneda (sin conversión)
             if self.cuenta_origen.moneda != self.cuenta_destino.moneda:
                 raise ValidationError('Las cuentas deben tener la misma moneda.')
+
+        # Reglas que solo se revisan al crear un movimiento nuevo, no al editar uno existente
+        # _state.adding es True mientras el objeto todavía no se ha guardado en la base
+        if self._state.adding:
+            # Una cuenta desactivada no puede enviar ni recibir movimientos nuevos
+            if self.cuenta_origen is not None and not self.cuenta_origen.activa:
+                raise ValidationError('La cuenta origen está inactiva.')
+            if self.cuenta_destino is not None and not self.cuenta_destino.activa:
+                raise ValidationError('La cuenta destino está inactiva.')
+
+            # El monto puede estar vacío si falló su propia validación; en ese caso no se compara
+            # Si sale dinero de una cuenta (retiro o transferencia), debe haber saldo suficiente
+            if self.cuenta_origen is not None and self.monto is not None:
+                # Usa la propiedad saldo del modelo Cuenta (entradas menos salidas)
+                disponible = self.cuenta_origen.saldo
+                if disponible < self.monto:
+                    raise ValidationError(f'Saldo insuficiente: la cuenta origen tiene {disponible:.2f}.')
 
     # Al imprimir una transacción se muestra el tipo y el monto
     def __str__(self):
