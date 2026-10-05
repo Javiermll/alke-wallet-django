@@ -1,0 +1,23 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Quitar contacto · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Quitar contacto</h2>
+    <p>
+        ¿Seguro que quieres quitar a <strong>{{ contacto.agendado.nombre }}</strong>
+        de la agenda de <strong>{{ contacto.propietario.nombre }}</strong>?
+    </p>
+    {# Aclara qué no se borra #}
+    <p>Solo se quita de la agenda: el cliente y sus cuentas no se eliminan.</p>
+
+    <form method="post">
+        {# Token de seguridad CSRF #}
+        {% csrf_token %}
+        <button type="submit">Sí, quitar</button>
+        <a href="{% url 'gestion:cliente_detalle' contacto.propietario.pk %}">Cancelar</a>
+    </form>
+{% endblock %}

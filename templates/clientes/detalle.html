@@ -57,24 +57,47 @@
 
     {# Contactos que el cliente tiene agendados #}
     <h3>Contactos</h3>
+    {# Enlace al formulario para agendar un contacto nuevo #}
+    <p><a href="{% url 'gestion:contacto_nuevo' cliente.pk %}">Agregar contacto</a></p>
     {% if contactos %}
         <table>
             <thead>
                 <tr>
                     <th>Apodo</th>
                     <th>Nombre</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for contacto in contactos %}
                     <tr>
                         <td>{{ contacto.apodo|default:"-" }}</td>
-                        <td>{{ contacto.agendado.nombre }}</td>
+                        {# El nombre es un enlace a la ficha del cliente agendado #}
+                        <td><a href="{% url 'gestion:cliente_detalle' contacto.agendado.pk %}">{{ contacto.agendado.nombre }}</a></td>
+                        <td>
+                            {# Atajo: abre el formulario de movimiento con una transferencia a este contacto ya elegida #}
+                            {% if contacto.cuenta_sugerida %}
+                                <a href="{% url 'gestion:transaccion_nueva' %}?tipo=transferencia&cuenta_destino={{ contacto.cuenta_sugerida.pk }}">Transferir</a>
+                            {% endif %}
+                            <a href="{% url 'gestion:contacto_eliminar' contacto.pk %}">Quitar</a>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% else %}
         <p>Este cliente no tiene contactos agendados.</p>
+    {% endif %}
+
+    {# Agendas de otros clientes en las que aparece este cliente (relación inversa agendado_por) #}
+    <h3>Aparece en la agenda de</h3>
+    {% if cliente.agendado_por.all %}
+        <ul>
+            {% for otro in cliente.agendado_por.all %}
+                <li><a href="{% url 'gestion:cliente_detalle' otro.pk %}">{{ otro.nombre }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Ningún cliente lo tiene agendado.</p>
     {% endif %}
 {% endblock %}

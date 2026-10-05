@@ -4,31 +4,43 @@
 
 from django.contrib import messages# messages permite dejar avisos que se muestran en la siguiente página
 from django.contrib.messages.views import SuccessMessageMixin# SuccessMessageMixin agrega un aviso de éxito al crear o editar
+from django.core.exceptions import ValidationError# ValidationError es el error que lanzan las reglas de validación
 from django.db.models import Count, ProtectedError, Q # Count cuenta registros relacionados; ProtectedError aparece al borrar algo protegido; Q permite hacer filtros complejos
+from django.shortcuts import get_object_or_404, redirect # get_object_or_404 busca un registro o responde 404; redirect envía a la persona a otra dirección
 from django.shortcuts import redirect# redirect envía a la persona a otra dirección
 from django.urls import reverse_lazy# reverse_lazy calcula una dirección a partir del nombre de la ruta
 from django.views.generic import (
-    TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView,# Vistas genéricas basadas en clases que trae Django
+    TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, # Vistas genéricas basadas en clases que trae Django
 )
 from . import consultas# Consultas reutilizables de la etapa 4
-
-from .forms import ClienteForm, ClienteEdicionForm, CuentaForm, CuentaEdicionForm # Formularios de esta app
-from .models import Cliente, Cuenta, Transaccion# Modelos de esta app
+from .forms import (   # Formularios de esta app
+    ClienteForm, ClienteEdicionForm, CuentaForm, CuentaEdicionForm,
+    TransaccionForm, FiltroTransaccionForm, ContactoForm,
+)
+from .models import Cliente, Contacto, Cuenta, Moneda, Transaccion# Modelos de esta app
+from .servicios import registrar_transaccion # Función que registra movimientos de forma segura
 
 
 # ============================================================
 # INICIO
 # ============================================================
 
-# Página de inicio: muestra el total de clientes, cuentas y movimientos
+# Página de inicio: totales, últimos movimientos y enlaces rápidos
 class InicioView(TemplateView):
-    template_name = 'inicio.html'# Template que se muestra (Django lo busca en la carpeta templates/)
-    def get_context_data(self, **kwargs):  # Agrega datos extra al contexto, que es el diccionario que recibe el template
-        contexto = super().get_context_data(**kwargs)# Parte del contexto normal de la vista
-        contexto['total_clientes'] = Cliente.objects.count()# Agrega los tres totales
+    template_name = 'inicio.html' # Template que se muestra (Django lo busca en la carpeta templates/)
+
+    # Agrega datos extra al contexto, que es el diccionario que recibe el template
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)  # Parte del contexto normal de la vista
+        contexto['total_clientes'] = Cliente.objects.count()  # Agrega los tres totales
         contexto['total_cuentas'] = Cuenta.objects.count()
         contexto['total_transacciones'] = Transaccion.objects.count()
-        return contexto# Devuelve el contexto completo
+        # Los 5 movimientos más recientes (el modelo ya los ordena del más nuevo al más antiguo)
+        # select_related trae las cuentas y sus monedas en la misma consulta
+        contexto['ultimos_movimientos'] = Transaccion.objects.select_related(
+            'cuenta_origen__moneda', 'cuenta_destino__moneda',
+        )[:5]
+        return contexto # Devuelve el contexto completo
 
 
 # ============================================================
@@ -51,11 +63,15 @@ class ClienteDetailView(DetailView):
     template_name = 'clientes/detalle.html'# Template que se muestra
     context_object_name = 'cliente'# Nombre con el que el template recibe el cliente
   
-    def get_context_data(self, **kwargs):  # Agrega datos extra al contexto
+    # Agrega datos extra al contexto
+    def get_context_data(self, **kwargs):
         contexto = super().get_context_data(**kwargs)# Parte del contexto normal de la vista
         contexto['cuentas'] = consultas.cuentas_con_saldo().filter(cliente=self.object)# Cuentas del cliente con su saldo, usando la consulta de la etapa 4
-        contexto['contactos'] = self.object.fichas_de_agenda.select_related('agendado')# Contactos que el cliente tiene agendados, con los datos del cliente agendado
-        return contexto# Devuelve el contexto completo
+        contactos = list(self.object.fichas_de_agenda.select_related('agendado'))# Contactos que el cliente tiene agendados, con los datos del cliente agendado
+        for ficha in contactos:  # A cada contacto se le suma su primera cuenta activa, para ofrecer el atajo de transferir
+            ficha.cuenta_sugerida = ficha.agendado.cuentas.filter(activa=True).order_by('numero').first()
+        contexto['contactos'] = contactos  # Entrega la lista de contactos al template
+        return contexto  # Devuelve el contexto completo
 
 
 # Formulario para crear un cliente
@@ -193,3 +209,175 @@ class CuentaDeleteView(DeleteView):
             return redirect('gestion:cuenta_detalle', pk=self.object.pk) # Vuelve a la ficha de la cuenta, donde se muestra el aviso
         messages.success(self.request, f'Cuenta {numero} eliminada correctamente.') # Si se borró bien, deja un aviso de éxito
         return respuesta # Devuelve la redirección al listado
+
+# ============================================================
+# TRANSACCIONES
+# ============================================================
+
+# Listado de movimientos, con filtros y paginación
+class TransaccionListView(ListView):
+    model = Transaccion# Modelo que se lista
+    template_name = 'transacciones/lista.html'# Template que se muestra
+    context_object_name = 'transacciones' # Nombre con el que el template recibe la lista
+    paginate_by = 10  # Cantidad de movimientos por página
+
+    # Define qué movimientos se muestran
+    def get_queryset(self):
+        queryset = Transaccion.objects.select_related('cuenta_origen__moneda', 'cuenta_destino__moneda')  # Trae las cuentas y sus monedas en la misma consulta, para que el listado sea rápido
+        self.filtro = FiltroTransaccionForm(self.request.GET)  # Formulario de filtros: lee lo que viene en la dirección (?tipo=retiro&cuenta=0004...)
+        if self.filtro.is_valid(): # Solo se aplican los filtros si los datos son válidos (por ejemplo, fechas bien escritas)
+            datos = self.filtro.cleaned_data # Datos ya limpios y convertidos por el formulario
+            if datos['tipo']: # Filtro por tipo
+                queryset = queryset.filter(tipo=datos['tipo'])
+            if datos['cuenta']: # Filtro por cuenta: el número puede ser el del origen o el del destino
+                queryset = queryset.filter(
+                    Q(cuenta_origen__numero=datos['cuenta']) | Q(cuenta_destino__numero=datos['cuenta'])
+                )
+            if datos['desde']: # Filtro desde una fecha (se compara solo el día, en la hora de Santiago)
+                queryset = queryset.filter(fecha__date__gte=datos['desde'])
+            if datos['hasta']:  # Filtro hasta una fecha
+                queryset = queryset.filter(fecha__date__lte=datos['hasta'])
+        return queryset # Devuelve los movimientos ya filtrados
+
+    # Agrega datos extra al contexto
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs) # Parte del contexto normal de la vista
+        contexto['filtro'] = self.filtro # Entrega el formulario de filtros al template
+        parametros = self.request.GET.copy()  # Copia los parámetros de la dirección y quita "page", para que los enlaces de paginación conserven los filtros
+        parametros.pop('page', None)
+        contexto['parametros'] = parametros.urlencode()
+
+        return contexto  # Devuelve el contexto completo
+
+
+# Ficha de un movimiento (solo lectura: el historial no se edita ni se borra)
+class TransaccionDetailView(DetailView):
+    model = Transaccion # Modelo del que se muestra un registro (el pk viene en la dirección)
+    template_name = 'transacciones/detalle.html' # Template que se muestra
+    context_object_name = 'transaccion'  # Nombre con el que el template recibe el movimiento
+
+    def get_queryset(self): # Define de dónde sale el movimiento que se muestra
+        return Transaccion.objects.select_related( # Trae las cuentas, sus dueños y sus monedas en la misma consulta
+            'cuenta_origen__cliente', 'cuenta_origen__moneda',
+            'cuenta_destino__cliente', 'cuenta_destino__moneda',
+        )
+
+
+# Formulario para registrar un movimiento nuevo
+# Es un FormView porque no usa form.save(): guarda a través de registrar_transaccion
+class TransaccionCreateView(FormView):
+    form_class = TransaccionForm # Formulario que se usa
+    template_name = 'transacciones/formulario.html' # Template que se muestra
+
+    # Valores que el formulario muestra ya elegidos al abrirse
+    def get_initial(self):
+        inicial = super().get_initial()# Parte de los valores normales de la vista
+        for campo in ('tipo', 'cuenta_origen', 'cuenta_destino'):# Si la dirección trae ?tipo=...&cuenta_destino=..., el formulario se abre con esos valores elegidos
+            valor = self.request.GET.get(campo)
+            if valor:
+                inicial[campo] = valor
+       
+        return inicial # Devuelve los valores iniciales
+
+    def form_valid(self, form): # Se ejecuta cuando el formulario pasó las validaciones básicas
+        datos = form.cleaned_data # Datos ya limpios del formulario
+        try:
+            # Registra el movimiento dentro de una operación atómica, con la cuenta origen bloqueada
+            movimiento = registrar_transaccion(
+                tipo=datos['tipo'],
+                cuenta_origen=datos.get('cuenta_origen'),
+                cuenta_destino=datos.get('cuenta_destino'),
+                monto=datos['monto'],
+                descripcion=datos.get('descripcion', ''),
+            )
+        except ValidationError as error:
+            form.add_error(None, error) # Si la segunda revisión falla (por ejemplo, el saldo cambió), se muestra el error en el formulario
+            return self.form_invalid(form)
+        messages.success( # Si todo salió bien, deja un aviso de éxito
+            self.request,
+            f'Movimiento registrado: {movimiento.get_tipo_display()} de {movimiento.monto}.',
+        )
+        return redirect('gestion:transaccion_detalle', pk=movimiento.pk) # Va a la ficha del movimiento recién creado
+
+# ============================================================
+# CONTACTOS
+# ============================================================
+
+# Formulario para agendar un contacto en la agenda de un cliente
+class ContactoCreateView(SuccessMessageMixin, CreateView):
+    form_class = ContactoForm  # Formulario que se usa
+    template_name = 'contactos/formulario.html' # Template que se muestra
+    success_message = 'Contacto «%(agendado)s» agregado correctamente.'  # Aviso de éxito; %(agendado)s se reemplaza por el nombre del cliente agendado
+
+    # Se ejecuta primero, antes de decidir si es una petición GET o POST
+    def dispatch(self, request, *args, **kwargs):
+        self.propietario = get_object_or_404(Cliente, pk=kwargs['pk']) # Busca al cliente dueño de la agenda por el pk de la dirección; si no existe, responde 404
+        return super().dispatch(request, *args, **kwargs)  # Continúa con el funcionamiento normal de la vista
+
+    # Datos extra que recibe el formulario al crearse
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs() # Parte de los datos normales de la vista
+        kwargs['propietario'] = self.propietario  # Le entrega al formulario el dueño de la agenda
+        return kwargs  # Devuelve los datos completos
+
+    # Agrega datos extra al contexto
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs) # Parte del contexto normal de la vista
+        contexto['propietario'] = self.propietario # El template muestra de quién es la agenda
+        return contexto  # Devuelve el contexto completo
+
+    # Dirección a la que se va después de guardar: la ficha del dueño de la agenda
+    def get_success_url(self):
+        return reverse_lazy('gestion:cliente_detalle', kwargs={'pk': self.propietario.pk})
+
+
+# Pantalla de confirmación y borrado de un contacto (se quita de la agenda; el cliente no se borra)
+class ContactoDeleteView(DeleteView):
+    template_name = 'contactos/confirmar_eliminar.html' # Template de confirmación
+    context_object_name = 'contacto' # Nombre con el que el template recibe la ficha del contacto
+
+    # Define de dónde sale la ficha que se borra
+    def get_queryset(self):
+        return Contacto.objects.select_related('propietario', 'agendado') # Trae el dueño de la agenda y el cliente agendado en la misma consulta
+
+    # Dirección a la que se va después de borrar: la ficha del dueño de la agenda
+    def get_success_url(self):
+        return reverse_lazy('gestion:cliente_detalle', kwargs={'pk': self.object.propietario_id})
+
+    # Se ejecuta cuando la persona confirma el borrado
+    def form_valid(self, form):
+        nombre = self.object.agendado.nombre # Guarda el nombre antes de borrar, para usarlo en el aviso
+        respuesta = super().form_valid(form)  # Hace el borrado normal de Django
+        messages.success(self.request, f'Contacto «{nombre}» quitado de la agenda.')  # Deja un aviso de éxito
+        return respuesta # Devuelve la redirección a la ficha del dueño
+
+# ============================================================
+# REPORTE
+# ============================================================
+
+# Reporte general: movimientos por tipo, saldos por cliente y movimientos por mes
+class ReporteView(TemplateView):
+    template_name = 'reporte.html' # Template que se muestra
+
+    # Arma todos los datos del reporte reutilizando las consultas de gestion/consultas.py
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs) # Parte del contexto normal de la vista
+        nombres_tipo = dict(Transaccion.TIPOS)  # Diccionario con los nombres legibles de los tipos: {'deposito': 'Depósito', ...}
+        secciones = []  # Lista de secciones, una por moneda (no se pueden sumar monedas distintas)
+        for moneda in Moneda.objects.order_by('codigo'):  # Recorre las monedas en orden de código
+            resumen = consultas.resumen_por_tipo(moneda.codigo)   # Cantidad de movimientos y monto total por tipo, solo en esta moneda
+            for fila in resumen: # Agrega a cada fila el nombre legible del tipo
+                fila['tipo_nombre'] = nombres_tipo[fila['tipo']]
+            saldos = consultas.saldo_por_cliente(moneda.codigo)   # Saldo total de cada cliente en esta moneda
+            total_saldos = sum(fila['total'] for fila in saldos)  # Suma de los saldos de todos los clientes
+            secciones.append({   # Guarda todo junto como una sección del reporte
+                'moneda': moneda,
+                'resumen': resumen,
+                'saldos': saldos,
+                'total_saldos': total_saldos,
+            })
+      
+        contexto['secciones'] = secciones  # Entrega las secciones al template
+        contexto['por_mes'] = consultas.movimientos_por_mes()  # Cantidad de movimientos de cada mes
+        contexto['total_movimientos'] = Transaccion.objects.count() # Total de movimientos, para comprobar que la tabla por mes suma lo mismo
+        return contexto # Devuelve el contexto completo

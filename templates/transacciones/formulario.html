@@ -1,0 +1,22 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Nuevo movimiento · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Nuevo movimiento</h2>
+    {# Recuerda la regla del saldo #}
+    <p>En un retiro o una transferencia, el monto no puede superar el saldo de la cuenta origen.</p>
+
+    {# method="post" envía los datos al guardar; sin action, vuelve a esta misma dirección #}
+    <form method="post">
+        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
+        {% csrf_token %}
+        {# Dibuja todos los campos con su etiqueta; los errores generales aparecen arriba #}
+        {{ form.as_p }}
+        <button type="submit">Registrar</button>
+        <a href="{% url 'gestion:transaccion_lista' %}">Cancelar</a>
+    </form>
+{% endblock %}

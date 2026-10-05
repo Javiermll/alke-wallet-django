@@ -1,0 +1,27 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Agregar contacto · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Agregar contacto</h2>
+    {# Aclara de quién es la agenda #}
+    <p>Agenda de <strong>{{ propietario.nombre }}</strong>.</p>
+
+    {# Si quedan clientes por agendar, muestra el formulario; si no, un aviso #}
+    {% if form.agendado.field.queryset.exists %}
+        <form method="post">
+            {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
+            {% csrf_token %}
+            {# Dibuja todos los campos con su etiqueta y sus mensajes de error #}
+            {{ form.as_p }}
+            <button type="submit">Agregar</button>
+            <a href="{% url 'gestion:cliente_detalle' propietario.pk %}">Cancelar</a>
+        </form>
+    {% else %}
+        <p>No quedan clientes por agendar: todos los demás ya están en esta agenda.</p>
+        <p><a href="{% url 'gestion:cliente_detalle' propietario.pk %}">Volver a la ficha</a></p>
+    {% endif %}
+{% endblock %}

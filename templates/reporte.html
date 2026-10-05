@@ -1,0 +1,101 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Reporte · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Reporte</h2>
+    <p>Los montos de monedas distintas no se suman entre sí: cada moneda tiene su propia sección.</p>
+
+    {# Una sección por moneda #}
+    {% for seccion in secciones %}
+        <h3>{{ seccion.moneda.codigo }} · {{ seccion.moneda.nombre }}</h3>
+
+        {# Cantidad de movimientos y monto total por tipo #}
+        <h4>Movimientos por tipo</h4>
+        {% if seccion.resumen %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Monto total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in seccion.resumen %}
+                        <tr>
+                            <td>{{ fila.tipo_nombre }}</td>
+                            <td>{{ fila.cantidad }}</td>
+                            <td>{{ seccion.moneda.simbolo }}{{ fila.total }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay movimientos en esta moneda.</p>
+        {% endif %}
+
+        {# Saldo total de cada cliente, de mayor a menor #}
+        <h4>Saldo por cliente</h4>
+        {% if seccion.saldos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in seccion.saldos %}
+                        <tr>
+                            {# El nombre enlaza a la ficha del cliente #}
+                            <td><a href="{% url 'gestion:cliente_detalle' fila.cliente %}">{{ fila.cliente__nombre }}</a></td>
+                            <td>{{ seccion.moneda.simbolo }}{{ fila.total }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Total</th>
+                        <th>{{ seccion.moneda.simbolo }}{{ seccion.total_saldos }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        {% else %}
+            <p>No hay cuentas en esta moneda.</p>
+        {% endif %}
+    {% endfor %}
+
+    {# Cantidad de movimientos de cada mes #}
+    <h3>Movimientos por mes</h3>
+    {% if por_mes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Mes</th>
+                    <th>Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fila in por_mes %}
+                    <tr>
+                        {# F Y escribe el nombre del mes y el año, por ejemplo "septiembre 2026" #}
+                        <td>{{ fila.mes|date:"F Y" }}</td>
+                        <td>{{ fila.cantidad }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th>Total</th>
+                    <th>{{ total_movimientos }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    {% else %}
+        <p>Todavía no hay movimientos.</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,41 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Movimiento {{ transaccion.pk }} · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Movimiento {{ transaccion.pk }}</h2>
+    <p><a href="{% url 'gestion:transaccion_lista' %}">Volver al listado</a></p>
+
+    {# Datos del movimiento #}
+    <ul>
+        <li>Tipo: {{ transaccion.get_tipo_display }}</li>
+        <li>Fecha: {{ transaccion.fecha|date:"d/m/Y H:i" }}</li>
+        {# El símbolo de la moneda sale de la cuenta destino o, si no hay, de la origen #}
+        <li>Monto: <strong>{% if transaccion.cuenta_destino %}{{ transaccion.cuenta_destino.moneda.simbolo }}{% else %}{{ transaccion.cuenta_origen.moneda.simbolo }}{% endif %}{{ transaccion.monto }}</strong></li>
+        <li>Descripción: {{ transaccion.descripcion|default:"-" }}</li>
+        {# Cuenta de la que sale el dinero, si la hay #}
+        <li>Cuenta origen:
+            {% if transaccion.cuenta_origen %}
+                <a href="{% url 'gestion:cuenta_detalle' transaccion.cuenta_origen.pk %}">{{ transaccion.cuenta_origen.numero }}</a>
+                ({{ transaccion.cuenta_origen.cliente.nombre }})
+            {% else %}
+                -
+            {% endif %}
+        </li>
+        {# Cuenta a la que llega el dinero, si la hay #}
+        <li>Cuenta destino:
+            {% if transaccion.cuenta_destino %}
+                <a href="{% url 'gestion:cuenta_detalle' transaccion.cuenta_destino.pk %}">{{ transaccion.cuenta_destino.numero }}</a>
+                ({{ transaccion.cuenta_destino.cliente.nombre }})
+            {% else %}
+                -
+            {% endif %}
+        </li>
+    </ul>
+
+    {# Aclara por qué no hay botones de editar ni eliminar #}
+    <p><small>Los movimientos forman parte del historial: no se editan ni se eliminan.</small></p>
+{% endblock %}

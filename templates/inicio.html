@@ -9,9 +9,47 @@
     <h2>Bienvenido a Alke Wallet</h2>
     <p>Resumen de lo que hay registrado en el sistema:</p>
     <ul>
-        {# Los valores vienen del contexto que arma InicioView #}
-        <li>Clientes: {{ total_clientes }}</li>
-        <li>Cuentas: {{ total_cuentas }}</li>
-        <li>Transacciones: {{ total_transacciones }}</li>
+        {# Los valores vienen del contexto que arma InicioView; cada total enlaza a su listado #}
+        <li><a href="{% url 'gestion:cliente_lista' %}">Clientes</a>: {{ total_clientes }}</li>
+        <li><a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>: {{ total_cuentas }}</li>
+        <li><a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>: {{ total_transacciones }}</li>
     </ul>
+
+    {# Los 5 movimientos más recientes #}
+    <h3>Últimos movimientos</h3>
+    {% if ultimos_movimientos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimiento in ultimos_movimientos %}
+                    <tr>
+                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>{{ movimiento.get_tipo_display }}</td>
+                        {# Si no hay cuenta (por ejemplo, el origen de un depósito), muestra un guion #}
+                        <td>{{ movimiento.cuenta_origen.numero|default:"-" }}</td>
+                        <td>{{ movimiento.cuenta_destino.numero|default:"-" }}</td>
+                        {# El símbolo de la moneda sale de la cuenta destino o, si no hay, de la origen #}
+                        <td>{% if movimiento.cuenta_destino %}{{ movimiento.cuenta_destino.moneda.simbolo }}{% else %}{{ movimiento.cuenta_origen.moneda.simbolo }}{% endif %}{{ movimiento.monto }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Todavía no hay movimientos.</p>
+    {% endif %}
+
+    {# Enlaces rápidos #}
+    <p>
+        <a href="{% url 'gestion:transaccion_nueva' %}">Registrar un movimiento</a> ·
+        <a href="{% url 'gestion:transaccion_lista' %}">Ver todos los movimientos</a> ·
+        <a href="{% url 'gestion:reporte' %}">Ver el reporte</a>
+    </p>
 {% endblock %}

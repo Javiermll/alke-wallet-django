@@ -27,4 +27,18 @@ urlpatterns = [
     path('cuentas/<int:pk>/', views.CuentaDetailView.as_view(), name='cuenta_detalle'),# Ficha de la cuenta con ese pk
     path('cuentas/<int:pk>/editar/', views.CuentaUpdateView.as_view(), name='cuenta_editar'), # Formulario para editar la cuenta con ese pk
     path('cuentas/<int:pk>/eliminar/', views.CuentaDeleteView.as_view(), name='cuenta_eliminar'), # Confirmación para eliminar la cuenta con ese pk
+
+        # ---------- Transacciones ----------
+    
+    path('transacciones/', views.TransaccionListView.as_view(), name='transaccion_lista'),# Listado de movimientos, con filtros y paginación
+    path('transacciones/nueva/', views.TransaccionCreateView.as_view(), name='transaccion_nueva'),# Formulario para registrar un movimiento
+    path('transacciones/<int:pk>/', views.TransaccionDetailView.as_view(), name='transaccion_detalle'),# Ficha del movimiento con ese pk (los movimientos no se editan ni se borran)
+
+        # ---------- Contactos ----------
+
+    path('clientes/<int:pk>/contactos/nuevo/', views.ContactoCreateView.as_view(), name='contacto_nuevo'),  # Formulario para agendar un contacto en la agenda del cliente con ese pk
+    path('contactos/<int:pk>/eliminar/', views.ContactoDeleteView.as_view(), name='contacto_eliminar'),  # Confirmación para quitar de la agenda la ficha de contacto con ese pk
+
+        # ---------- Reporte ----------
+    path('reporte/', views.ReporteView.as_view(), name='reporte'), # Reporte general con las consultas de la etapa 4
 ]

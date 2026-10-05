@@ -1,0 +1,75 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Transacciones · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Transacciones</h2>
+    {# Enlace al formulario para registrar un movimiento #}
+    <p><a href="{% url 'gestion:transaccion_nueva' %}">Nuevo movimiento</a></p>
+
+    {# Formulario de filtros: method="get" pone los filtros en la dirección y no necesita token CSRF #}
+    <form method="get">
+        {# Dibuja los cuatro filtros con su etiqueta y sus errores #}
+        {{ filtro.as_p }}
+        <button type="submit">Filtrar</button>
+        {# Vuelve al listado sin ningún filtro #}
+        <a href="{% url 'gestion:transaccion_lista' %}">Limpiar filtros</a>
+    </form>
+
+    {# paginator.count es el total de movimientos que cumplen los filtros #}
+    <p>{{ paginator.count }} movimiento(s) encontrado(s).</p>
+
+    {# Si hay movimientos, muestra la tabla; si no, un aviso #}
+    {% if transacciones %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Monto</th>
+                    <th>Descripción</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {# Recorre la página actual; "movimiento" es cada fila #}
+                {% for movimiento in transacciones %}
+                    <tr>
+                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                        {# get_tipo_display muestra el texto legible del tipo #}
+                        <td>{{ movimiento.get_tipo_display }}</td>
+                        {# Si no hay cuenta (por ejemplo, el origen de un depósito), muestra un guion #}
+                        <td>{{ movimiento.cuenta_origen.numero|default:"-" }}</td>
+                        <td>{{ movimiento.cuenta_destino.numero|default:"-" }}</td>
+                        {# El símbolo de la moneda sale de la cuenta destino o, si no hay, de la origen #}
+                        <td>{% if movimiento.cuenta_destino %}{{ movimiento.cuenta_destino.moneda.simbolo }}{% else %}{{ movimiento.cuenta_origen.moneda.simbolo }}{% endif %}{{ movimiento.monto }}</td>
+                        <td>{{ movimiento.descripcion|default:"-" }}</td>
+                        <td><a href="{% url 'gestion:transaccion_detalle' movimiento.pk %}">Ver</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay movimientos con esos filtros.</p>
+    {% endif %}
+
+    {# Navegación entre páginas: solo aparece si hay más de una página #}
+    {% if is_paginated %}
+        <p>
+            {# Enlace a la página anterior; conserva los filtros con "parametros" #}
+            {% if page_obj.has_previous %}
+                <a href="?{% if parametros %}{{ parametros }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+            {% endif %}
+            Página {{ page_obj.number }} de {{ paginator.num_pages }}
+            {# Enlace a la página siguiente #}
+            {% if page_obj.has_next %}
+                <a href="?{% if parametros %}{{ parametros }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+            {% endif %}
+        </p>
+    {% endif %}
+{% endblock %}
