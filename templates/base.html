@@ -1,0 +1,56 @@
+{# alke_wallet/templates/base.html #}
+
+{# Plantilla base: el diseño común que heredan todas las páginas #}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {# Codificación de caracteres, para que se vean bien las tildes y la ñ #}
+    <meta charset="UTF-8">
+    {# Hace que la página se adapte al ancho del celular #}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Título de la pestaña: cada página puede reemplazar este bloque #}
+    <title>{% block titulo %}Alke Wallet{% endblock %}</title>
+    {# Estilo mínimo temporal; en la etapa 7 se reemplaza por un archivo CSS estático #}
+    <style>
+        body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+        nav a { margin-right: 1rem; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+        .mensajes { list-style: none; padding: 0; }
+        .mensajes li { padding: 0.6rem; margin-bottom: 0.4rem; border-radius: 4px; background: #eee; }
+        .mensajes .success { background: #d4edda; }
+        .mensajes .error { background: #f8d7da; }
+        .errorlist { color: #b00020; }
+    </style>
+</head>
+<body>
+    {# Encabezado con el nombre del sitio y el menú #}
+    <header>
+        <h1>Alke Wallet</h1>
+        <nav>
+            {# url 'gestion:inicio' busca la dirección por el nombre de la ruta #}
+            <a href="{% url 'gestion:inicio' %}">Inicio</a>
+            {# Enlace al panel de administración de Django #}
+            <a href="{% url 'admin:index' %}">Panel de administración</a>
+        </nav>
+    </header>
+    <hr>
+    <main>
+        {# Muestra los mensajes de aviso (éxito o error) que dejan las vistas #}
+        {% if messages %}
+            <ul class="mensajes">
+                {% for mensaje in messages %}
+                    <li class="{{ mensaje.tags }}">{{ mensaje }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# Aquí va el contenido propio de cada página #}
+        {% block contenido %}{% endblock %}
+    </main>
+    <hr>
+    {# Pie de página #}
+    <footer>
+        <small>Alke Wallet · Proyecto del Módulo 7</small>
+    </footer>
+</body>
+</html>

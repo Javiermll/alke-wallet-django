@@ -1,0 +1,17 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Inicio · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Bienvenido a Alke Wallet</h2>
+    <p>Resumen de lo que hay registrado en el sistema:</p>
+    <ul>
+        {# Los valores vienen del contexto que arma InicioView #}
+        <li>Clientes: {{ total_clientes }}</li>
+        <li>Cuentas: {{ total_cuentas }}</li>
+        <li>Transacciones: {{ total_transacciones }}</li>
+    </ul>
+{% endblock %}

@@ -1,22 +1,10 @@
-"""
-URL configuration for core project.
+# core/urls.py
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
-from django.urls import path
+from django.contrib import admin  # Importa el panel de administración de Django
+from django.urls import path, include  # path crea una ruta; include conecta las rutas de otra app
 
+# Lista de rutas del proyecto; Django las revisa de arriba hacia abajo
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),  # Todo lo que empiece con admin/ lo atiende el panel de administración
+    path('', include('gestion.urls')),  # Cualquier otra dirección se entrega a las rutas de la app gestion
 ]
