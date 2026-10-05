@@ -1,0 +1,25 @@
+{# alke_wallet/templates/clientes/confirmar_eliminar.html #}
+
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Eliminar cliente · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Eliminar cliente</h2>
+    <p>¿Seguro que quieres eliminar a <strong>{{ cliente.nombre }}</strong>?</p>
+
+    {# Avisa qué más se borra junto con el cliente #}
+    <p>También se eliminarán sus {{ cliente.cuentas.count }} cuenta(s) y {{ cliente.fichas_de_agenda.count }} contacto(s) agendado(s).</p>
+    {# Avisa de la protección del historial #}
+    <p>Si alguna de sus cuentas tiene movimientos, no se podrá eliminar.</p>
+
+    <form method="post">
+        {# Token de seguridad CSRF #}
+        {% csrf_token %}
+        <button type="submit">Sí, eliminar</button>
+        <a href="{% url 'gestion:cliente_detalle' cliente.pk %}">Cancelar</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,80 @@
+{# alke_wallet/templates/clientes/detalle.html #}
+
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}{{ cliente.nombre }} · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>{{ cliente.nombre }}</h2>
+    <p>
+        <a href="{% url 'gestion:cliente_editar' cliente.pk %}">Editar</a>
+        <a href="{% url 'gestion:cliente_eliminar' cliente.pk %}">Eliminar</a>
+        <a href="{% url 'gestion:cliente_lista' %}">Volver al listado</a>
+    </p>
+
+    {# Datos del cliente #}
+    <ul>
+        <li>Correo electrónico: {{ cliente.email }}</li>
+        <li>Teléfono: {{ cliente.telefono|default:"-" }}</li>
+        <li>Usuario de acceso: {{ cliente.usuario.username }}</li>
+        {# date da formato a la fecha; Django la convierte a la hora de Santiago #}
+        <li>Registrado el: {{ cliente.fecha_registro|date:"d/m/Y H:i" }}</li>
+    </ul>
+
+    {# Cuentas del cliente, con el saldo que calculó la vista #}
+    <h3>Cuentas</h3>
+    {# Enlace al formulario de cuenta nueva, con este cliente ya elegido #}
+    <p><a href="{% url 'gestion:cuenta_nueva' %}?cliente={{ cliente.pk }}">Nueva cuenta para este cliente</a></p>
+    {% if cuentas %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Moneda</th>
+                    <th>Saldo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cuenta in cuentas %}
+                    <tr>
+                        {# El número es un enlace a la ficha de la cuenta #}
+                        <td><a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">{{ cuenta.numero }}</a></td>
+                        <td>{{ cuenta.moneda.codigo }}</td>
+                        <td>{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</td>
+                        {# Muestra Activa o Inactiva según el campo activa #}
+                        <td>{% if cuenta.activa %}Activa{% else %}Inactiva{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Este cliente todavía no tiene cuentas.</p>
+    {% endif %}
+
+    {# Contactos que el cliente tiene agendados #}
+    <h3>Contactos</h3>
+    {% if contactos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Apodo</th>
+                    <th>Nombre</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contacto in contactos %}
+                    <tr>
+                        <td>{{ contacto.apodo|default:"-" }}</td>
+                        <td>{{ contacto.agendado.nombre }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Este cliente no tiene contactos agendados.</p>
+    {% endif %}
+{% endblock %}

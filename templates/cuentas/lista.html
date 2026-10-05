@@ -1,0 +1,50 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Cuentas · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Cuentas</h2>
+    {# Enlace al formulario para crear una cuenta #}
+    <p><a href="{% url 'gestion:cuenta_nueva' %}">Nueva cuenta</a></p>
+
+    {# Si hay cuentas, muestra la tabla; si no, un aviso #}
+    {% if cuentas %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Moneda</th>
+                    <th>Saldo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# Recorre la lista que entrega la vista; "cuenta" es cada fila #}
+                {% for cuenta in cuentas %}
+                    <tr>
+                        {# El número es un enlace a la ficha de la cuenta #}
+                        <td><a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">{{ cuenta.numero }}</a></td>
+                        {# El cliente es un enlace a su ficha #}
+                        <td><a href="{% url 'gestion:cliente_detalle' cuenta.cliente.pk %}">{{ cuenta.cliente.nombre }}</a></td>
+                        <td>{{ cuenta.moneda.codigo }}</td>
+                        {# saldo_calculado lo trae la consulta de la etapa 4 #}
+                        <td>{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</td>
+                        {# Muestra Activa o Inactiva según el campo activa #}
+                        <td>{% if cuenta.activa %}Activa{% else %}Inactiva{% endif %}</td>
+                        <td>
+                            <a href="{% url 'gestion:cuenta_editar' cuenta.pk %}">Editar</a>
+                            <a href="{% url 'gestion:cuenta_eliminar' cuenta.pk %}">Eliminar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay cuentas registradas.</p>
+    {% endif %}
+{% endblock %}

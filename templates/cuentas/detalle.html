@@ -1,0 +1,58 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Cuenta {{ cuenta.numero }} · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Cuenta {{ cuenta.numero }}</h2>
+    <p>
+        <a href="{% url 'gestion:cuenta_editar' cuenta.pk %}">Editar</a>
+        <a href="{% url 'gestion:cuenta_eliminar' cuenta.pk %}">Eliminar</a>
+        <a href="{% url 'gestion:cuenta_lista' %}">Volver al listado</a>
+    </p>
+
+    {# Datos de la cuenta #}
+    <ul>
+        <li>Cliente: <a href="{% url 'gestion:cliente_detalle' cuenta.cliente.pk %}">{{ cuenta.cliente.nombre }}</a></li>
+        <li>Moneda: {{ cuenta.moneda.codigo }} ({{ cuenta.moneda.nombre }})</li>
+        {# saldo_calculado lo trae la consulta de la etapa 4 #}
+        <li>Saldo: <strong>{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</strong></li>
+        <li>Estado: {% if cuenta.activa %}Activa{% else %}Inactiva{% endif %}</li>
+        <li>Creada el: {{ cuenta.fecha_creacion|date:"d/m/Y H:i" }}</li>
+    </ul>
+
+    {# Últimos movimientos de la cuenta #}
+    <h3>Movimientos</h3>
+    {% if movimientos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimiento in movimientos %}
+                    <tr>
+                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                        {# get_tipo_display muestra el texto legible del tipo (Depósito, Retiro...) #}
+                        <td>{{ movimiento.get_tipo_display }}</td>
+                        {# Si la cuenta es el destino, el dinero entra (+); si no, sale (-) #}
+                        <td>{% if movimiento.cuenta_destino_id == cuenta.pk %}+{% else %}-{% endif %}{{ movimiento.monto }}</td>
+                        <td>{{ movimiento.descripcion|default:"-" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {# Avisa si hay más movimientos de los que se muestran #}
+        {% if total_movimientos > 15 %}
+            <p>Se muestran los 15 más recientes de {{ total_movimientos }}.</p>
+        {% endif %}
+    {% else %}
+        <p>Esta cuenta todavía no tiene movimientos.</p>
+    {% endif %}
+{% endblock %}

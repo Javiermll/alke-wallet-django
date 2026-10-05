@@ -1,0 +1,21 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Eliminar cuenta · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Eliminar cuenta</h2>
+    <p>¿Seguro que quieres eliminar la cuenta <strong>{{ cuenta.numero }}</strong> de {{ cuenta.cliente.nombre }}?</p>
+
+    {# Avisa de la protección del historial y ofrece la alternativa #}
+    <p>Si la cuenta tiene movimientos, no se podrá eliminar. En ese caso, puedes desactivarla desde Editar.</p>
+
+    <form method="post">
+        {# Token de seguridad CSRF #}
+        {% csrf_token %}
+        <button type="submit">Sí, eliminar</button>
+        <a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">Cancelar</a>
+    </form>
+{% endblock %}

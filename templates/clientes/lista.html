@@ -1,0 +1,49 @@
+{# alke_wallet/templates/clientes/lista.html #}
+
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Clientes · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Clientes</h2>
+    {# Enlace al formulario para crear un cliente #}
+    <p><a href="{% url 'gestion:cliente_nuevo' %}">Nuevo cliente</a></p>
+
+    {# Si hay clientes, muestra la tabla; si no, un aviso #}
+    {% if clientes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo electrónico</th>
+                    <th>Teléfono</th>
+                    <th>Cuentas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# Recorre la lista que entrega la vista; "cliente" es cada fila #}
+                {% for cliente in clientes %}
+                    <tr>
+                        {# El nombre es un enlace a la ficha; cliente.pk va en la dirección #}
+                        <td><a href="{% url 'gestion:cliente_detalle' cliente.pk %}">{{ cliente.nombre }}</a></td>
+                        <td>{{ cliente.email }}</td>
+                        {# default muestra un guion si el teléfono está vacío #}
+                        <td>{{ cliente.telefono|default:"-" }}</td>
+                        {# num_cuentas lo calculó la vista con annotate #}
+                        <td>{{ cliente.num_cuentas }}</td>
+                        <td>
+                            <a href="{% url 'gestion:cliente_editar' cliente.pk %}">Editar</a>
+                            <a href="{% url 'gestion:cliente_eliminar' cliente.pk %}">Eliminar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay clientes registrados.</p>
+    {% endif %}
+{% endblock %}
