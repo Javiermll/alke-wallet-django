@@ -3,7 +3,7 @@
 
 from django.db.models import Count, Sum, Q, F  # Importa las funciones de cálculo y las herramientas para combinar condiciones
 from django.db.models import OuterRef, Subquery, DecimalField  # Importa las herramientas para las subconsultas del saldo
-from django.db.models.functions import Coalesce  # Coalesce reemplaza un valor vacío (NULL) por otro, por ejemplo 0
+from django.db.models.functions import Coalesce, TruncMonth  # Coalesce reemplaza un valor vacío (NULL) por otro, por ejemplo 0; TruncMonth redondea una fecha al primer día del mes
 from django.db import connection  # connection permite abrir un cursor para escribir SQL directo
 from django.utils import timezone  # timezone da la fecha y hora actual
 from datetime import timedelta   # timedelta permite restar días a una fecha
@@ -97,6 +97,36 @@ def cuentas_con_saldo():
         salidas=Coalesce(Subquery(salidas_sq, output_field=campo_dinero), Decimal('0.00'), output_field=campo_dinero),
     ).annotate(saldo_calculado=F('entradas') - F('salidas')).order_by('numero')
 
+# Saldo total de cada cliente en una moneda, de mayor a menor
+def saldo_por_cliente(codigo_moneda='CLP'):
+    # Parte de las cuentas con saldo (etapa 4) y se queda con las de esa moneda
+    # order_by() vacío quita el orden por número de cuenta, que estorbaría al agrupar
+    # values agrupa por cliente; annotate suma el saldo de todas sus cuentas
+    resultado = (
+        cuentas_con_saldo()
+        .filter(moneda__codigo=codigo_moneda)
+        .order_by()
+        .values('cliente', 'cliente__nombre')
+        .annotate(total=Sum('saldo_calculado'))
+        .order_by('-total', 'cliente__nombre')
+    )
+    # Devuelve una lista de diccionarios, fácil de recorrer en un template
+    return list(resultado)
+
+
+# Cantidad de movimientos de cada mes, del más antiguo al más reciente
+def movimientos_por_mes():
+    # TruncMonth recorta cada fecha al primer día de su mes (en la hora de Santiago)
+    # order_by() vacío quita el orden por defecto del modelo, que estorbaría al agrupar
+    resumen = (
+        Transaccion.objects.order_by()
+        .annotate(mes=TruncMonth('fecha'))
+        .values('mes')
+        .annotate(cantidad=Count('id'))
+        .order_by('mes')
+    )
+    # Devuelve una lista de diccionarios
+    return list(resumen)
 
 # ============================================================
 # CONSULTAS CON SQL PROPIO
