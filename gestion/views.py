@@ -18,8 +18,10 @@ from .forms import (   # Formularios de esta app
     TransaccionForm, FiltroTransaccionForm, ContactoForm,
 )
 from .models import Cliente, Contacto, Cuenta, Moneda, Transaccion# Modelos de esta app
+from .mixins import SoloPersonalMixin, PersonalOClienteMixin# Mixins que limitan cada pantalla según el rol de la persona
 from .servicios import registrar_transaccion # Función que registra movimientos de forma segura
-
+from django.utils.functional import cached_property# Para recordar un valor calculado dentro de la vista
+from .alcance import limitar_a_cliente, movimientos_visibles# Funciones que limitan los datos al cliente de la sesión
 
 # ============================================================
 # INICIO
@@ -31,15 +33,20 @@ class InicioView(TemplateView):
 
     # Agrega datos extra al contexto, que es el diccionario que recibe el template
     def get_context_data(self, **kwargs):
-        contexto = super().get_context_data(**kwargs)  # Parte del contexto normal de la vista
-        contexto['total_clientes'] = Cliente.objects.count()  # Agrega los tres totales
-        contexto['total_cuentas'] = Cuenta.objects.count()
-        contexto['total_transacciones'] = Transaccion.objects.count()
-        # Los 5 movimientos más recientes (el modelo ya los ordena del más nuevo al más antiguo)
-        # select_related trae las cuentas y sus monedas en la misma consulta
-        contexto['ultimos_movimientos'] = Transaccion.objects.select_related(
-            'cuenta_origen__moneda', 'cuenta_destino__moneda',
-        )[:5]
+        contexto = super().get_context_data(**kwargs)  # Parte del contexto normal de la vista  
+        usuario = self.request.user # Persona que hace la petición
+        if usuario.is_staff:# El personal ve los totales de todo el sistema
+            contexto['total_clientes'] = Cliente.objects.count()
+            contexto['total_cuentas'] = Cuenta.objects.count()
+            contexto['total_transacciones'] = Transaccion.objects.count()
+        # Un cliente con sesión ve solo sus cuentas (con saldo) y la cantidad de sus movimientos
+        elif hasattr(usuario, 'cliente'):
+            contexto['mis_cuentas'] = consultas.cuentas_con_saldo().filter(cliente=usuario.cliente).select_related('moneda')
+            contexto['total_transacciones'] = movimientos_visibles(usuario).count()
+        # Los 5 movimientos más recientes que la persona puede ver (mismo filtro que los listados)
+        # Un usuario sin cliente no ve datos: el template solo le muestra un aviso
+        if usuario.is_staff or hasattr(usuario, 'cliente'):
+            contexto['ultimos_movimientos'] = movimientos_visibles(usuario)[:5]
         return contexto # Devuelve el contexto completo
 
 
@@ -48,7 +55,7 @@ class InicioView(TemplateView):
 # ============================================================
 
 # Listado de todos los clientes
-class ClienteListView(ListView):
+class ClienteListView(SoloPersonalMixin, ListView):
     model = Cliente# Modelo que se lista
     template_name = 'clientes/lista.html'# Template que se muestra
     context_object_name = 'clientes'# Nombre con el que el template recibe la lista
@@ -58,7 +65,7 @@ class ClienteListView(ListView):
 
 
 # Ficha de un cliente: sus datos, sus cuentas con saldo y sus contactos
-class ClienteDetailView(DetailView):
+class ClienteDetailView(PersonalOClienteMixin, DetailView):
     model = Cliente# Modelo del que se muestra un registro (el pk viene en la dirección)
     template_name = 'clientes/detalle.html'# Template que se muestra
     context_object_name = 'cliente'# Nombre con el que el template recibe el cliente
@@ -72,10 +79,14 @@ class ClienteDetailView(DetailView):
             ficha.cuenta_sugerida = ficha.agendado.cuentas.filter(activa=True).order_by('numero').first()
         contexto['contactos'] = contactos  # Entrega la lista de contactos al template
         return contexto  # Devuelve el contexto completo
+    
+    # Un cliente solo puede abrir su propia ficha; la ajena responde 404
+    def get_queryset(self):
+        return limitar_a_cliente(Cliente.objects.all(), self.request.user, 'pk')
 
 
 # Formulario para crear un cliente
-class ClienteCreateView(SuccessMessageMixin, CreateView):
+class ClienteCreateView(SoloPersonalMixin, SuccessMessageMixin, CreateView):
     form_class = ClienteForm# Formulario que se usa
     template_name = 'clientes/formulario.html'# Template que se muestra
     success_url = reverse_lazy('gestion:cliente_lista')# Dirección a la que se va después de guardar
@@ -83,7 +94,7 @@ class ClienteCreateView(SuccessMessageMixin, CreateView):
 
 
 # Formulario para editar un cliente
-class ClienteUpdateView(SuccessMessageMixin, UpdateView):
+class ClienteUpdateView(PersonalOClienteMixin, SuccessMessageMixin, UpdateView):
     model = Cliente # Modelo que se edita (el pk viene en la dirección)
     form_class = ClienteEdicionForm # Formulario que se usa
     template_name = 'clientes/formulario.html' # Template que se muestra (el mismo que para crear)
@@ -92,10 +103,14 @@ class ClienteUpdateView(SuccessMessageMixin, UpdateView):
     # Dirección a la que se va después de guardar: la ficha del cliente
     def get_success_url(self):
         return reverse_lazy('gestion:cliente_detalle', kwargs={'pk': self.object.pk})
+    
+    # Un cliente solo puede abrir su propia ficha; la ajena responde 404
+    def get_queryset(self):
+        return limitar_a_cliente(Cliente.objects.all(), self.request.user, 'pk')
 
 
 # Pantalla de confirmación y borrado de un cliente
-class ClienteDeleteView(DeleteView):
+class ClienteDeleteView(SoloPersonalMixin, DeleteView):
     model = Cliente # Modelo que se borra (el pk viene en la dirección)
     template_name = 'clientes/confirmar_eliminar.html' # Template de confirmación
     context_object_name = 'cliente'  # Nombre con el que el template recibe el cliente
@@ -120,7 +135,7 @@ class ClienteDeleteView(DeleteView):
 # ============================================================
 
 # Listado de todas las cuentas, con su saldo
-class CuentaListView(ListView):
+class CuentaListView(PersonalOClienteMixin, ListView):
     model = Cuenta # Modelo que se lista
     template_name = 'cuentas/lista.html' # Template que se muestra
     context_object_name = 'cuentas' # Nombre con el que el template recibe la lista
@@ -129,18 +144,18 @@ class CuentaListView(ListView):
     def get_queryset(self):
         # Usa la consulta: cada cuenta trae su saldo_calculado
         # select_related trae el cliente y la moneda en la misma consulta
-        return consultas.cuentas_con_saldo().select_related('cliente', 'moneda')
+        return limitar_a_cliente(consultas.cuentas_con_saldo().select_related('cliente', 'moneda'), self.request.user, 'cliente')
 
 
 # Ficha de una cuenta: sus datos, su saldo y sus últimos movimientos
-class CuentaDetailView(DetailView):
+class CuentaDetailView(PersonalOClienteMixin, DetailView):
     model = Cuenta # Modelo del que se muestra un registro (el pk viene en la dirección)
     template_name = 'cuentas/detalle.html' # Template que se muestra
     context_object_name = 'cuenta' # Nombre con el que el template recibe la cuenta
 
     # Define de dónde sale la cuenta que se muestra
     def get_queryset(self):
-        return consultas.cuentas_con_saldo().select_related('cliente', 'moneda') # Misma consulta del listado, para que la cuenta traiga su saldo_calculado
+        return limitar_a_cliente(consultas.cuentas_con_saldo().select_related('cliente', 'moneda'), self.request.user, 'cliente') # Misma consulta del listado, para que la cuenta traiga su saldo_calculado
 
     # Agrega datos extra al contexto
     def get_context_data(self, **kwargs):
@@ -156,7 +171,7 @@ class CuentaDetailView(DetailView):
 
 
 # Formulario para crear una cuenta
-class CuentaCreateView(SuccessMessageMixin, CreateView):
+class CuentaCreateView(SoloPersonalMixin, SuccessMessageMixin, CreateView):
     form_class = CuentaForm # Formulario que se usa
     template_name = 'cuentas/formulario.html' # Template que se muestra
     success_message = 'Cuenta %(numero)s creada correctamente.' # Aviso de éxito; %(numero)s se reemplaza por el número escrito en el formulario
@@ -177,7 +192,7 @@ class CuentaCreateView(SuccessMessageMixin, CreateView):
 
 
 # Formulario para editar una cuenta
-class CuentaUpdateView(SuccessMessageMixin, UpdateView):
+class CuentaUpdateView(SoloPersonalMixin, SuccessMessageMixin, UpdateView):
     model = Cuenta # Modelo que se edita (el pk viene en la dirección)
     form_class = CuentaEdicionForm # Formulario que se usa
     template_name = 'cuentas/formulario.html'  # Template que se muestra (el mismo que para crear)
@@ -189,7 +204,7 @@ class CuentaUpdateView(SuccessMessageMixin, UpdateView):
 
 
 # Pantalla de confirmación y borrado de una cuenta
-class CuentaDeleteView(DeleteView):
+class CuentaDeleteView(SoloPersonalMixin, DeleteView):
     model = Cuenta # Modelo que se borra (el pk viene en la dirección)
     template_name = 'cuentas/confirmar_eliminar.html' # Template de confirmación
     context_object_name = 'cuenta' # Nombre con el que el template recibe la cuenta
@@ -215,7 +230,7 @@ class CuentaDeleteView(DeleteView):
 # ============================================================
 
 # Listado de movimientos, con filtros y paginación
-class TransaccionListView(ListView):
+class TransaccionListView(PersonalOClienteMixin, ListView):
     model = Transaccion# Modelo que se lista
     template_name = 'transacciones/lista.html'# Template que se muestra
     context_object_name = 'transacciones' # Nombre con el que el template recibe la lista
@@ -223,7 +238,8 @@ class TransaccionListView(ListView):
 
     # Define qué movimientos se muestran
     def get_queryset(self):
-        queryset = Transaccion.objects.select_related('cuenta_origen__moneda', 'cuenta_destino__moneda')  # Trae las cuentas y sus monedas en la misma consulta, para que el listado sea rápido
+        # movimientos_visibles ya deja solo los del cliente de la sesión (el personal ve todos)
+        queryset = movimientos_visibles(self.request.user)  # Trae las cuentas y sus monedas en la misma consulta, para que el listado sea rápido
         self.filtro = FiltroTransaccionForm(self.request.GET)  # Formulario de filtros: lee lo que viene en la dirección (?tipo=retiro&cuenta=0004...)
         if self.filtro.is_valid(): # Solo se aplican los filtros si los datos son válidos (por ejemplo, fechas bien escritas)
             datos = self.filtro.cleaned_data # Datos ya limpios y convertidos por el formulario
@@ -251,23 +267,32 @@ class TransaccionListView(ListView):
 
 
 # Ficha de un movimiento (solo lectura: el historial no se edita ni se borra)
-class TransaccionDetailView(DetailView):
+class TransaccionDetailView(PersonalOClienteMixin, DetailView):
     model = Transaccion # Modelo del que se muestra un registro (el pk viene en la dirección)
     template_name = 'transacciones/detalle.html' # Template que se muestra
     context_object_name = 'transaccion'  # Nombre con el que el template recibe el movimiento
 
     def get_queryset(self): # Define de dónde sale el movimiento que se muestra
-        return Transaccion.objects.select_related( # Trae las cuentas, sus dueños y sus monedas en la misma consulta
-            'cuenta_origen__cliente', 'cuenta_origen__moneda',
-            'cuenta_destino__cliente', 'cuenta_destino__moneda',
+        # Solo los movimientos visibles para la persona; uno ajeno responde 404
+        return movimientos_visibles(self.request.user).select_related(
+            'cuenta_origen__cliente', 'cuenta_destino__cliente',
         )
 
 
 # Formulario para registrar un movimiento nuevo
 # Es un FormView porque no usa form.save(): guarda a través de registrar_transaccion
-class TransaccionCreateView(FormView):
+class TransaccionCreateView(PersonalOClienteMixin, FormView):
     form_class = TransaccionForm # Formulario que se usa
     template_name = 'transacciones/formulario.html' # Template que se muestra
+
+    # Datos extra que recibe el formulario al crearse
+    def get_form_kwargs(self):
+        # Parte de los datos normales de la vista
+        kwargs = super().get_form_kwargs()
+        # El formulario necesita saber quién opera para limitar las cuentas
+        kwargs['usuario'] = self.request.user
+        # Devuelve los datos completos
+        return kwargs
 
     # Valores que el formulario muestra ya elegidos al abrirse
     def get_initial(self):
@@ -304,15 +329,21 @@ class TransaccionCreateView(FormView):
 # ============================================================
 
 # Formulario para agendar un contacto en la agenda de un cliente
-class ContactoCreateView(SuccessMessageMixin, CreateView):
+class ContactoCreateView(PersonalOClienteMixin, SuccessMessageMixin, CreateView):
     form_class = ContactoForm  # Formulario que se usa
     template_name = 'contactos/formulario.html' # Template que se muestra
     success_message = 'Contacto «%(agendado)s» agregado correctamente.'  # Aviso de éxito; %(agendado)s se reemplaza por el nombre del cliente agendado
 
-    # Se ejecuta primero, antes de decidir si es una petición GET o POST
-    def dispatch(self, request, *args, **kwargs):
-        self.propietario = get_object_or_404(Cliente, pk=kwargs['pk']) # Busca al cliente dueño de la agenda por el pk de la dirección; si no existe, responde 404
-        return super().dispatch(request, *args, **kwargs)  # Continúa con el funcionamiento normal de la vista
+    # Dueño de la agenda; cached_property lo calcula la primera vez que se usa y lo recuerda
+    # (así se busca después de que el mixin comprueba el rol, no antes)
+    @cached_property
+    def propietario(self):
+        # Un cliente solo puede tocar su propia agenda; la ajena responde 404
+        return get_object_or_404(
+            limitar_a_cliente(Cliente.objects.all(), self.request.user, 'pk'),
+            pk=self.kwargs['pk'],
+        )
+    
 
     # Datos extra que recibe el formulario al crearse
     def get_form_kwargs(self):
@@ -332,14 +363,14 @@ class ContactoCreateView(SuccessMessageMixin, CreateView):
 
 
 # Pantalla de confirmación y borrado de un contacto (se quita de la agenda; el cliente no se borra)
-class ContactoDeleteView(DeleteView):
+class ContactoDeleteView(PersonalOClienteMixin, DeleteView):
     template_name = 'contactos/confirmar_eliminar.html' # Template de confirmación
     context_object_name = 'contacto' # Nombre con el que el template recibe la ficha del contacto
 
     # Define de dónde sale la ficha que se borra
     def get_queryset(self):
-        return Contacto.objects.select_related('propietario', 'agendado') # Trae el dueño de la agenda y el cliente agendado en la misma consulta
-
+        # Un cliente solo puede quitar fichas de su propia agenda
+        return limitar_a_cliente(Contacto.objects.select_related('propietario', 'agendado'), self.request.user, 'propietario')
     # Dirección a la que se va después de borrar: la ficha del dueño de la agenda
     def get_success_url(self):
         return reverse_lazy('gestion:cliente_detalle', kwargs={'pk': self.object.propietario_id})
@@ -356,7 +387,7 @@ class ContactoDeleteView(DeleteView):
 # ============================================================
 
 # Reporte general: movimientos por tipo, saldos por cliente y movimientos por mes
-class ReporteView(TemplateView):
+class ReporteView(SoloPersonalMixin, TemplateView):
     template_name = 'reporte.html' # Template que se muestra
 
     # Arma todos los datos del reporte reutilizando las consultas de gestion/consultas.py
