@@ -7,13 +7,35 @@
 {# Contenido propio de esta página #}
 {% block contenido %}
     <h2>Bienvenido a Alke Wallet</h2>
-    <p>Resumen de lo que hay registrado en el sistema:</p>
-    <ul>
-        {# Los valores vienen del contexto que arma InicioView; cada total enlaza a su listado #}
-        <li><a href="{% url 'gestion:cliente_lista' %}">Clientes</a>: {{ total_clientes }}</li>
-        <li><a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>: {{ total_cuentas }}</li>
-        <li><a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>: {{ total_transacciones }}</li>
-    </ul>
+
+    {# Una persona con sesión que no es del personal y no tiene un cliente asociado no puede usar el sistema todavía #}
+    {% if not user.is_staff and not user.cliente %}
+        <p class="aviso">
+            Tu usuario todavía no tiene un cliente asociado. Pide al personal de Alke Wallet que lo registre
+            para poder ver tus cuentas y tus movimientos.
+        </p>
+    {% else %}
+    {# El personal ve los totales de todo el sistema #}
+    {% if user.is_staff %}
+        <p>Resumen de lo que hay registrado en el sistema:</p>
+        <ul>
+            {# Los valores vienen del contexto que arma InicioView; cada total enlaza a su listado #}
+            <li><a href="{% url 'gestion:cliente_lista' %}">Clientes</a>: {{ total_clientes }}</li>
+            <li><a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>: {{ total_cuentas }}</li>
+            <li><a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>: {{ total_transacciones }}</li>
+        </ul>
+    {# Un cliente ve solo sus cuentas con su saldo #}
+    {% else %}
+        <p>Estas son tus cuentas:</p>
+        <ul>
+            {% for cuenta in mis_cuentas %}
+                <li><a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">{{ cuenta.numero }}</a>:
+                    {{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }} ({{ cuenta.moneda.codigo }})</li>
+            {% empty %}
+                <li>Todavía no tienes cuentas.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
     {# Los 5 movimientos más recientes #}
     <h3>Últimos movimientos</h3>
@@ -48,8 +70,8 @@
 
     {# Enlaces rápidos #}
     <p>
-        <a href="{% url 'gestion:transaccion_nueva' %}">Registrar un movimiento</a> ·
-        <a href="{% url 'gestion:transaccion_lista' %}">Ver todos los movimientos</a> ·
-        <a href="{% url 'gestion:reporte' %}">Ver el reporte</a>
+        <a href="{% url 'gestion:transaccion_lista' %}">Ver todos los movimientos</a>
+        {% if user.is_staff %} · <a href="{% url 'gestion:reporte' %}">Ver el reporte</a>{% endif %}
     </p>
+    {% endif %} 
 {% endblock %}
