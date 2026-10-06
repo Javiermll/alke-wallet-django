@@ -4,6 +4,8 @@
 from django import forms  # forms es el módulo de formularios de Django
 from django.contrib.auth.models import User  # Importa el modelo User para elegir el usuario de login del cliente
 from .models import Cliente, Contacto, Cuenta, Moneda, Transaccion # Importa los modelos sobre los que se construyen los formularios
+from .alcance import cuentas_de_origen, cuentas_de_destino# Listas de cuentas según quién opera
+
 # Textos de las etiquetas, para que aparezcan bien escritos (con tildes)
 ETIQUETAS_CLIENTE = {
     'usuario': 'Usuario de acceso',
@@ -115,16 +117,29 @@ class TransaccionForm(forms.ModelForm):
             'tipo': 'Depósito: solo cuenta destino. Retiro: solo cuenta origen. Transferencia: las dos.',
         }
 
-    # Se ejecuta al crear el formulario; sirve para ajustar sus campos
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs) # Primero hace lo normal de Django
-        # Solo se ofrecen cuentas activas, ordenadas por número
-        # select_related trae el cliente y la moneda para mostrarlos sin consultas extra
-        activas = Cuenta.objects.filter(activa=True).select_related('cliente', 'moneda').order_by('numero')
-        for campo in ('cuenta_origen', 'cuenta_destino'): # Aplica lo mismo a las dos listas de cuentas
-            self.fields[campo].queryset = activas  # Cuentas que se pueden elegir
-            self.fields[campo].label_from_instance = etiqueta_cuenta  # Cómo se escribe cada cuenta en la lista
+    # Se ejecuta al crear el formulario; recibe a la persona que lo usa para limitar las cuentas
+    def __init__(self, *args, usuario, **kwargs):
+        super().__init__(*args, **kwargs)# Primero hace lo normal de Django
+        self.usuario = usuario# Guarda a la persona para usarla después en clean()
+        self.fields['cuenta_origen'].queryset = cuentas_de_origen(usuario)# Cada lista ofrece solo las cuentas que esa persona puede usar (ver alcance.py)
+        self.fields['cuenta_destino'].queryset = cuentas_de_destino(usuario)
+        
+        for campo in ('cuenta_origen', 'cuenta_destino'):# Aplica lo mismo a las dos listas de cuentas
+            self.fields[campo].label_from_instance = etiqueta_cuenta# Cómo se escribe cada cuenta en la lista
+            self.fields[campo].empty_label = 'Ninguna'# Texto de la opción vacía, en español (una cuenta puede no aplicar según el tipo)
+        
+        self.fields['tipo'].choices = [('', 'Selecciona un tipo')] + Transaccion.TIPOS # Texto de la opción vacía del tipo, en español
 
+    # Validación que mira varios campos a la vez
+    def clean(self):
+        datos = super().clean()# Datos ya revisados campo por campo
+        # Regla extra solo para clientes: un depósito debe ir a una cuenta propia
+        # (la lista de destino incluye cuentas de contactos, pero solo para transferir)
+        if not self.usuario.is_staff and datos.get('tipo') == 'deposito':
+            destino = datos.get('cuenta_destino')
+            if destino is not None and destino.cliente_id != self.usuario.cliente.pk:
+                self.add_error('cuenta_destino', 'Un depósito solo puede ir a una de tus cuentas.')
+        return datos # Devuelve los datos
 
 # Formulario de filtros del listado (se envía por GET, así que no lleva token CSRF)
 class FiltroTransaccionForm(forms.Form):
