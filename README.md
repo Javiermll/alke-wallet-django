@@ -14,7 +14,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 | 3 | Migraciones en SQLite y PostgreSQL | Completada |
 | 4 | Consultas personalizadas (`filter`, `exclude`, `annotate`, `raw()`, cursores) | Completada |
 | 5 | Panel de administración | Completada |
-| 6 | Vistas CRUD basadas en clases y templates | Pendiente |
+| 6 | Vistas CRUD basadas en clases y templates | Completada |
 | 7 | Autenticación y archivos estáticos | Pendiente |
 | 8 | Pruebas | Pendiente |
 | 9 | Documentación final y demostración | Pendiente |
@@ -119,7 +119,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-El panel de administración está en `http://127.0.0.1:8000/admin/`.
+Las pantallas de la aplicación están en `http://127.0.0.1:8000/` (inicio), `/clientes/`, `/cuentas/`, `/transacciones/` y `/reporte/`. El panel de administración está en `http://127.0.0.1:8000/admin/`.
 
 ## Arquitectura
 
@@ -139,10 +139,21 @@ alke_wallet/
 │   │   ├── 0001_initial.py    # Migración inicial: crea las 5 tablas de la app
 │   │   └── 0002_alter_cliente_options_alter_contacto_options_and_more.py  # Nombres legibles (sin cambios en las tablas)
 │   ├── models.py              # Modelos: Moneda, Cliente, Contacto, Cuenta, Transaccion
-│   ├── consultas.py           # Consultas reutilizables: ORM, raw() y cursor
+│   ├── consultas.py           # Consultas reutilizables: ORM, raw() y cursor (12 funciones)
+│   ├── servicios.py           # registrar_transaccion(): operación atómica con bloqueo de la cuenta de origen
+│   ├── forms.py               # Formularios de clientes, cuentas, transacciones y contactos
 │   ├── admin.py               # Panel de administración: columnas, búsqueda, filtros y tablas anidadas
-│   ├── views.py               # Vistas (etapa 6)
+│   ├── views.py               # Vistas basadas en clases: CRUD, inicio y reporte
+│   ├── urls.py                # Rutas de la app, con nombre
 │   └── tests.py               # Pruebas (etapa 8)
+├── templates/
+│   ├── base.html              # Plantilla común: encabezado, menú, mensajes y pie
+│   ├── inicio.html            # Página de inicio
+│   ├── reporte.html           # Reporte general
+│   ├── clientes/              # lista, detalle, formulario y confirmar_eliminar
+│   ├── cuentas/               # lista, detalle, formulario y confirmar_eliminar
+│   ├── transacciones/         # lista, detalle y formulario
+│   └── contactos/             # formulario y confirmar_eliminar
 ├── docs/
 │   └── capturas/              # Capturas de pantalla usadas en este README
 ├── manage.py                  # Utilidad de línea de comandos de Django
@@ -896,7 +907,7 @@ No fue necesario cambiar `settings.py`: el motor `django.db.backends.postgresql`
 **Reflexiones:**
 
 - **ORM frente a SQL propio:** el ORM resuelve casi todo y evita errores de sintaxis. El SQL propio ayuda a entender qué hay debajo y a escribir consultas complejas, como el saldo, que pueden hacerse igual con subconsultas del ORM.
-- **`NULL` no es lo mismo que texto vacío:** un formulario guarda un teléfono sin completar como `''`. La consulta de la consigna (`IS NOT NULL`) lo cuenta como si existiera. Hay que descartar ambos casos.
+- **`NULL` no es lo mismo que texto vacío:** pueden convivir en la misma columna (en los datos de demostración, Marta tiene `''` y Luis tiene `NULL`). Un formulario de Django guarda `NULL` cuando se deja vacío un campo de texto que admite `NULL`, pero los datos que llegan por otra vía pueden traer `''`. La consulta de la consigna (`IS NOT NULL`) cuenta como si tuviera teléfono a quien tiene `''`. Hay que descartar ambos casos.
 - **Las agregaciones pueden mentir sin avisar:** dos `Sum` sobre relaciones distintas dan montos inflados sin ningún error. Conviene contrastar siempre con una cuenta conocida.
 - **Seguridad:** los parámetros `%s` son lo que separa una consulta segura de una vulnerable a inyección.
 - **Las validaciones no se aplican siempre:** `create()`, `update()` masivo y el cursor no ejecutan `clean()`. Solo actúan las restricciones de la base de datos. Las reglas de Python se aplican con `full_clean()`, en formularios y en el panel de administración.
@@ -1047,7 +1058,7 @@ Los clientes de demostración (Ana, Luis, etc.) son usuarios comunes y no pueden
 | Crear | Usuario, cliente con su cuenta (tabla anidada) y un depósito de 25000; el saldo de la `0009` pasa a 25000 |
 | Editar | Cambio de teléfono del cliente y desactivación de la cuenta |
 | Validar | Los casos inválidos se rechazan con su mensaje (tabla siguiente) |
-| Borrar | Borrar una cuenta con movimientos muestra una pantalla de protección; al borrar primero el depósito y luego el usuario, el cliente y su cuenta se borran en cascada |
+| Borrar | Borrar una cuenta con movimientos muestra una pantalla de protección; al borrar primero el depósito y luego el usuario, el cliente y su cuenta se borran en cascada. *Desde la etapa 6.1 el panel ya no permite borrar movimientos; para repetir este ejercicio, el depósito de prueba se borra desde la shell* |
 
 Al terminar, la base volvió a tener 5 clientes, 7 cuentas y 18 movimientos.
 
@@ -1083,7 +1094,7 @@ Esto confirma lo que quedó pendiente de la etapa 3: las reglas de `clean()` no 
 
 **Limitaciones conocidas del panel:**
 
-- **No revisa el saldo disponible.** Un retiro o una transferencia mayor que el saldo se guarda y deja la cuenta en negativo. Esa regla se aplicará en las vistas, dentro de una operación atómica (etapa 6), por lo que el panel queda como herramienta para quienes administran.
+- **No revisaba el saldo disponible** (resuelto en la etapa 6.1): un retiro o una transferencia mayor que el saldo se guardaba y dejaba la cuenta en negativo. Ahora la regla vive en el modelo y se aplica también en el panel.
 - **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso.
 
 **Reflexiones:**
@@ -1093,6 +1104,360 @@ Esto confirma lo que quedó pendiente de la etapa 3: las reglas de `clean()` no 
 - **`PROTECT` y `CASCADE` se ven en acción:** el panel explica por qué no se puede borrar una cuenta con historial y qué se borraría en cascada, antes de confirmar.
 - **Reutilizar consultas:** `cuentas_con_saldo()` sirve en el panel igual que en el comando de demostración, lo que justifica haberla dejado como función.
 
+### Etapa 6: pantallas con vistas basadas en clases
+
+**Objetivo:** construir las pantallas de la aplicación: CRUD con vistas basadas en clases, rutas dinámicas, formularios protegidos con CSRF y templates que heredan de una plantilla común.
+
+**Rama de trabajo:** `feature/crud`. Esta etapa no cambia los modelos, por lo que no genera migraciones.
+
+**Cómo funciona cada pantalla:**
+
+| Pieza | Para qué sirve | Archivo |
+|---|---|---|
+| Ruta | La dirección que escribe la persona | `gestion/urls.py` |
+| Vista | Decide qué datos mostrar o guardar | `gestion/views.py` |
+| Formulario | Define los campos y valida lo que se escribe | `gestion/forms.py` |
+| Template | El HTML que ve la persona, con `{% csrf_token %}` en cada formulario | `templates/` |
+
+**Rutas** (todas con nombre, usados como `{% url 'gestion:cliente_detalle' pk %}`):
+
+| Sección | Rutas | Vistas |
+|---|---|---|
+| Inicio | `/` | `TemplateView` |
+| Clientes | `/clientes/`, `/clientes/nuevo/`, `/clientes/<pk>/`, `/clientes/<pk>/editar/`, `/clientes/<pk>/eliminar/` | `ListView`, `CreateView`, `DetailView`, `UpdateView`, `DeleteView` |
+| Cuentas | `/cuentas/`, `/cuentas/nueva/`, `/cuentas/<pk>/`, `/cuentas/<pk>/editar/`, `/cuentas/<pk>/eliminar/` | `ListView`, `CreateView`, `DetailView`, `UpdateView`, `DeleteView` |
+| Transacciones | `/transacciones/`, `/transacciones/nueva/`, `/transacciones/<pk>/` | `ListView`, `FormView`, `DetailView` |
+| Contactos | `/clientes/<pk>/contactos/nuevo/`, `/contactos/<pk>/eliminar/` | `CreateView`, `DeleteView` |
+| Reporte | `/reporte/` | `TemplateView` |
+
+`<pk>` es una parte variable de la dirección: Django la convierte en un número y se la entrega a la vista para identificar el registro.
+
+**Decisiones:**
+
+| Tema | Elegida | Motivo |
+|---|---|---|
+| Qué lleva CRUD completo | Clientes y cuentas. Las transacciones solo se listan, se ven y se crean | Los movimientos son el historial y el saldo se calcula con ellos |
+| Regla del saldo | En `Transaccion.clean()`, solo al crear | Una sola regla para el panel y para las pantallas |
+| Registro de movimientos | A través de `registrar_transaccion()`, con `transaction.atomic()` y bloqueo de la cuenta de origen | Evita que dos retiros simultáneos dejen una cuenta en negativo |
+| Cuentas inactivas | No pueden enviar ni recibir movimientos nuevos | El campo `activa` ya existía y no tenía efecto |
+| Crear un cliente | Selector con los usuarios que aún no tienen cliente | Más simple que crear usuario y cliente a la vez |
+| Borrar con historial | Se captura `ProtectedError` y se muestra un mensaje claro | Evita una página de error 500 |
+| Templates | Carpeta `templates/` en la raíz, con `base.html` compartido | Coincide con la consigna y comparte el diseño |
+| Coherencia con el panel | Los movimientos son de solo lectura en el panel | Las mismas reglas en todos los accesos |
+
+#### 6.1 Reglas de saldo y cuentas activas
+
+Las reglas viven en el modelo, por lo que valen para el panel y para las pantallas. Solo se revisan al crear un movimiento: `self._state.adding` es `True` mientras el objeto no se ha guardado.
+
+```python
+# Reglas que solo se revisan al crear un movimiento nuevo, no al editar uno existente
+if self._state.adding:
+    # Una cuenta desactivada no puede enviar ni recibir movimientos nuevos
+    if self.cuenta_origen is not None and not self.cuenta_origen.activa:
+        raise ValidationError('La cuenta origen está inactiva.')
+    if self.cuenta_destino is not None and not self.cuenta_destino.activa:
+        raise ValidationError('La cuenta destino está inactiva.')
+
+    # El monto puede estar vacío si falló su propia validación; en ese caso no se compara
+    # Si sale dinero de una cuenta (retiro o transferencia), debe haber saldo suficiente
+    if self.cuenta_origen is not None and self.monto is not None:
+        disponible = self.cuenta_origen.saldo
+        if disponible < self.monto:
+            raise ValidationError(f'Saldo insuficiente: la cuenta origen tiene {disponible:.2f}.')
+```
+
+En el panel, `TransaccionAdmin` rechaza editar y borrar movimientos existentes (`has_change_permission` y `has_delete_permission`), por lo que se abren solo en modo lectura. Crear movimientos nuevos sigue funcionando, con las mismas reglas.
+
+Prueba con `full_clean()` desde la shell, sin guardar nada (cuenta `0004` con saldo 140000 y `0005` con 125000):
+
+| Caso | Resultado |
+|---|---|
+| Retiro de 100000 de la `0004` | Válido |
+| Retiro de 150000 de la `0004` | `Saldo insuficiente: la cuenta origen tiene 140000.00.` |
+| Transferencia de 200000 de la `0005` a la `0004` | `Saldo insuficiente: la cuenta origen tiene 125000.00.` |
+| Transferencia de 1000 de la `0005` a la `0004` | Válido |
+| Depósito de 50000 a la `0004` | Válido (un depósito no revisa saldo) |
+| Depósito a una cuenta inactiva | `La cuenta destino está inactiva.` |
+| Retiro desde una cuenta inactiva | `La cuenta origen está inactiva.` |
+| Retiro sin monto | `Este campo no puede ser nulo.` (no un error de Python) |
+| Retiro exacto del saldo (140000) | Válido |
+| Retiro del saldo más un centavo | `Saldo insuficiente: la cuenta origen tiene 140000.00.` |
+
+![Reglas del saldo probadas desde la shell](docs/capturas/55_regla_saldo_shell.png)
+
+![Movimiento en modo lectura en el panel](docs/capturas/56_admin_movimiento_solo_lectura.png)
+
+![Saldo insuficiente en el panel](docs/capturas/57_admin_saldo_insuficiente.png)
+
+**Incidencia resuelta:** al pegar el método `clean()` nuevo, quedó con 4 espacios de más, dentro de `class Meta`. Django lo rechazó al arrancar con `'class Meta' got invalid attribute(s): clean`. `Meta` solo acepta opciones de configuración; `clean()` es un método del modelo y se alinea con `class Meta`, no dentro de ella.
+
+#### 6.2 Estructura base: `templates/`, rutas y página de inicio
+
+Django busca los templates en la carpeta `templates/` de la raíz, gracias a esta línea de `core/settings.py`:
+
+```python
+# Carpeta templates/ de la raíz del proyecto, donde viven las plantillas compartidas
+'DIRS': [BASE_DIR / 'templates'],
+```
+
+`templates/base.html` es la plantilla común (encabezado, menú, mensajes y pie). Cada página la hereda con `{% extends 'base.html' %}` y rellena solo sus bloques.
+
+Una petición recorre este camino:
+
+| Paso | Qué pasa | Archivo |
+|---|---|---|
+| 1 | La persona escribe una dirección | |
+| 2 | Django busca la ruta en las del proyecto | `core/urls.py` |
+| 3 | Esa ruta lo deriva a las de la app (`include`) | `gestion/urls.py` |
+| 4 | La ruta apunta a una vista | `gestion/views.py` |
+| 5 | La vista prepara los datos y elige un template | `templates/*.html` |
+| 6 | El template hereda `base.html` y se convierte en HTML | `templates/base.html` |
+
+En `core/urls.py`, el panel se declara antes de `include('gestion.urls')`, para que `/admin/` no lo capture la app. El menú creció junto con las pantallas: un enlace a una ruta que todavía no existe habría provocado un `NoReverseMatch`.
+
+![Estructura de templates en VS Code](docs/capturas/58_estructura_templates.png)
+
+![Página de inicio](docs/capturas/59_pagina_inicio.png)
+
+#### 6.3 CRUD de clientes
+
+El formulario de creación solo ofrece usuarios que todavía no tienen cliente:
+
+```python
+# Solo muestra los usuarios que todavía no tienen un cliente asociado
+self.fields['usuario'].queryset = User.objects.filter(cliente__isnull=True).order_by('username')
+```
+
+El borrado captura la protección de las cuentas con historial:
+
+```python
+try:
+    # Intenta el borrado normal de Django
+    respuesta = super().form_valid(form)
+except ProtectedError:
+    # Si alguna cuenta del cliente tiene movimientos, Django lo impide
+    messages.error(self.request, f'No se puede eliminar a {nombre}: sus cuentas tienen movimientos registrados.')
+    return redirect('gestion:cliente_detalle', pk=self.object.pk)
+```
+
+| Prueba | Resultado |
+|---|---|
+| Listado | 5 clientes por nombre, con su cantidad de cuentas y un guion donde no hay teléfono |
+| Ficha de Ana García | Sus datos, cuentas `0001` (`$115000`) y `0003` (`US$400`) con saldo, y sus contactos |
+| Dirección inexistente (`/clientes/9999/`) | Error 404 |
+| Crear sin teléfono | `Cliente «Tomás Prueba» creado correctamente.` El teléfono se guarda como `NULL`, porque Django guarda `NULL` cuando se deja vacío un campo de texto que lo admite |
+| Correo repetido | `Ya existe Cliente con este Email.` |
+| Editar | El campo de usuario no aparece; aviso de actualización |
+| Eliminar un cliente con cuentas con movimientos (Ana) | Aviso rojo `No se puede eliminar a Ana García: sus cuentas tienen movimientos registrados.` El cliente sigue existiendo |
+| Eliminar un cliente sin cuentas | `Cliente «...» eliminado correctamente.` |
+| CSRF: formulario, envío sin token y borrado sin token | `200`, `403` y `403` |
+
+![Listado de clientes](docs/capturas/60_clientes_lista.png)
+
+![Ficha de un cliente](docs/capturas/61_cliente_detalle.png)
+
+![Formulario de nuevo cliente](docs/capturas/62_cliente_formulario.png)
+
+![Error de correo duplicado](docs/capturas/63_cliente_error_email.png)
+
+![Cliente creado](docs/capturas/64_cliente_creado.png)
+
+![Confirmación para eliminar un cliente](docs/capturas/65_cliente_eliminar_confirmar.png)
+
+![Eliminación protegida de un cliente con historial](docs/capturas/66_cliente_eliminar_protegido.png)
+
+![Protección CSRF en clientes](docs/capturas/67_csrf_403.png)
+
+#### 6.4 CRUD de cuentas
+
+| Tema | Decisión |
+|---|---|
+| Qué se puede editar | Solo el número y si está activa. Cambiar el cliente o la moneda dejaría los movimientos históricos sin sentido |
+| Eliminar | Se puede si no tiene movimientos. Si los tiene, se ofrece desactivarla |
+| Saldo | El listado y la ficha usan `cuentas_con_saldo()` de la etapa 4 |
+| Número al crear | El formulario propone el siguiente (`0008`) |
+| Crear desde un cliente | `?cliente=3` en la dirección deja ese cliente elegido |
+
+| Prueba | Resultado |
+|---|---|
+| Listado | 7 cuentas con sus saldos: `$115000`, `$60000`, `US$400`, `$140000`, `$125000`, `US$400`, `$95000` |
+| Ficha de la `0001` | Cliente Ana García y movimientos con signo: `+` los que entran y `-` los que salen |
+| Crear la cuenta `0008` | `Cuenta 0008 creada correctamente.` y saldo `$0` |
+| Número repetido | `Ya existe una cuenta con ese número.` (mensaje propio: el de Django sale sin tilde) |
+| Editar | Cliente y moneda aparecen solo como texto; al desmarcar **Cuenta activa**, la ficha muestra **Inactiva** |
+| Eliminar una cuenta con movimientos (`0001`) | Aviso rojo con la sugerencia de desactivarla |
+| Eliminar una cuenta sin movimientos | `Cuenta 0008 eliminada correctamente.` |
+| CSRF | `200`, `403` y `403` |
+
+![Listado de cuentas](docs/capturas/68_cuentas_lista.png)
+
+![Ficha de una cuenta](docs/capturas/69_cuenta_detalle.png)
+
+![Formulario de nueva cuenta](docs/capturas/70_cuenta_formulario.png)
+
+![Cuenta creada](docs/capturas/71_cuenta_creada.png)
+
+![Cuenta desactivada tras editarla](docs/capturas/72_cuenta_editar_inactiva.png)
+
+![Eliminación protegida de una cuenta con movimientos](docs/capturas/73_cuenta_eliminar_protegida.png)
+
+![Protección CSRF en cuentas](docs/capturas/74_csrf_cuentas_403.png)
+
+#### 6.5 Transacciones y registro atómico
+
+Todo movimiento creado desde las pantallas pasa por `gestion/servicios.py`:
+
+```python
+def registrar_transaccion(tipo, cuenta_origen=None, cuenta_destino=None, monto=None, descripcion=''):
+    # atomic: todo lo que ocurre dentro se guarda junto o se deshace junto
+    with transaction.atomic():
+        # Si el dinero sale de una cuenta, se bloquea esa cuenta hasta terminar y se vuelve a leer
+        if cuenta_origen is not None:
+            cuenta_origen = Cuenta.objects.select_for_update().get(pk=cuenta_origen.pk)
+        # La cuenta destino se vuelve a leer sin bloqueo, para conocer su estado actual
+        if cuenta_destino is not None:
+            cuenta_destino = Cuenta.objects.get(pk=cuenta_destino.pk)
+        # Arma el movimiento, repite todas las validaciones con la cuenta bloqueada y lo guarda
+        movimiento = Transaccion(tipo=tipo, cuenta_origen=cuenta_origen, cuenta_destino=cuenta_destino,
+                                 monto=monto, descripcion=descripcion)
+        movimiento.full_clean()
+        movimiento.save()
+    return movimiento
+```
+
+El formulario valida al enviarse; el servicio **repite las validaciones con la cuenta ya bloqueada**, porque entre una y otra el saldo pudo cambiar. Solo se bloquea la cuenta de origen: una cuenta destino solo recibe dinero y no corre riesgo de quedar en negativo.
+
+`select_for_update()` bloquea la fila en PostgreSQL, el motor de producción. SQLite no tiene bloqueos por fila y lo ignora, lo cual no afecta el desarrollo.
+
+El listado usa un formulario de filtros enviado por **GET**: los filtros viajan en la dirección (`?tipo=retiro&cuenta=0004`) y por eso no necesitan token CSRF, mientras que el formulario que escribe datos sí lo lleva. La paginación (10 por página) conserva los filtros en sus enlaces.
+
+| Prueba | Resultado |
+|---|---|
+| Listado | `18 movimiento(s) encontrado(s)`, 10 filas y `Página 1 de 2`; la página 2 tiene 8 |
+| Tipo Retiro / Depósito / Transferencia | 3 / 8 / 7 movimientos |
+| Cuenta `0004` | 6 movimientos |
+| Cuenta `0004` y tipo Transferencia | 4 movimientos |
+| Cuenta `9999` | 0 movimientos y el aviso `No hay movimientos con esos filtros` |
+| Fecha mal escrita en la dirección | Aviso de error en el filtro y listado completo |
+| Ficha de un movimiento | Tipo, fecha, monto, descripción y cuentas con enlace |
+| `/transacciones/<pk>/editar/` | Error 404: el historial no se edita ni se elimina |
+| Selector de cuentas | Solo cuentas activas, escritas como `0004 · Carla Soto (CLP)` |
+| Depósito válido | `Movimiento registrado: Depósito de 25000.` |
+| Retiro mayor que el saldo | `Saldo insuficiente: la cuenta origen tiene 165000.00.` No se guarda |
+| Transferencia entre monedas distintas | `Las cuentas deben tener la misma moneda.` |
+| Depósito con cuenta origen | `Un depósito no debe tener cuenta origen.` |
+| Transferencia a la misma cuenta | `La cuenta origen y la destino deben ser distintas.` |
+| Monto cero | `Asegúrese de que este valor es mayor o igual a 0.01.` |
+
+**Validación repetida.** Para simular un formulario enviado con datos que ya quedaron viejos, se registran dos retiros de 100000 desde una cuenta con 125000, dentro de una operación que se deshace al final:
+
+| Paso | Resultado |
+|---|---|
+| Saldo inicial de la `0005` | 125000 |
+| Primer retiro de 100000 | Registrado; saldo 25000 |
+| Segundo retiro con los mismos datos | `Saldo insuficiente: la cuenta origen tiene 25000.00.` |
+| Al final | Saldo 125000 y 18 movimientos: no queda nada |
+
+CSRF: `GET` del formulario `200`, `GET` del listado con filtros `200`, y `POST` sin token `403`.
+
+![Listado de transacciones](docs/capturas/75_transacciones_lista.png)
+
+![Listado filtrado](docs/capturas/76_transacciones_filtros.png)
+
+![Página 2 del listado](docs/capturas/77_transacciones_pagina2.png)
+
+![Ficha de un movimiento](docs/capturas/78_transaccion_detalle.png)
+
+![Formulario de nuevo movimiento](docs/capturas/79_transaccion_formulario.png)
+
+![Movimiento registrado](docs/capturas/80_transaccion_creada.png)
+
+![Saldo insuficiente](docs/capturas/81_transaccion_saldo_insuficiente.png)
+
+![Error de validación en el formulario](docs/capturas/82_transaccion_validaciones.png)
+
+![Validación repetida dentro de la operación atómica](docs/capturas/83_servicio_validacion_repetida.png)
+
+![Protección CSRF en transacciones](docs/capturas/84_csrf_transacciones_403.png)
+
+**Incidencia resuelta:** al compactar un `import` a una sola línea quedó una coma al final antes del comentario: `from .forms import ..., FiltroTransaccionForm, # ...`. Python rechaza con `trailing comma not allowed without surrounding parentheses`, porque esa coma solo es válida si la lista va entre paréntesis.
+
+#### 6.6 Contactos
+
+Los contactos se agregan y se quitan desde la ficha del cliente. El dueño de la agenda sale de la dirección (`/clientes/3/contactos/nuevo/`), y el formulario solo pide a quién agendar y el apodo. El selector excluye al dueño y a quienes ya están en su agenda; la restricción de la base de datos queda como respaldo.
+
+El atajo **Transferir** de cada contacto abre el formulario de movimiento con la transferencia y la primera cuenta activa del contacto ya elegidas, usando una dirección con parámetros (`?tipo=transferencia&cuenta_destino=2`). No registra nada por sí solo.
+
+| Prueba | Resultado |
+|---|---|
+| Ficha de Ana García | Contactos Lucho (Luis Pérez) y Carli (Carla Soto), cada uno con **Transferir** y **Quitar**; en **Aparece en la agenda de**: Luis Pérez |
+| Formulario de agregar contacto en Ana | Solo ofrece a Diego Rojas y Marta Vega |
+| Agregar a Diego con apodo | `Contacto «Diego Rojas» agregado correctamente.` y deja de aparecer en el selector |
+| Agregar sin apodo | Se guarda; el apodo se ve como un guion |
+| Quitar un contacto | `Contacto «Diego Rojas» quitado de la agenda.` El cliente y sus cuentas siguen existiendo |
+| Cliente inexistente (`/clientes/9999/contactos/nuevo/`) | Error 404 |
+| Atajo **Transferir** | El formulario se abre con Transferencia y la cuenta destino elegidas |
+| CSRF | `200`, `403` y `403` |
+
+La agenda no es simétrica: que Ana tenga agendado a Luis no hace que Luis tenga agendada a Ana. La sección **Aparece en la agenda de** usa la relación inversa `agendado_por`, definida en la etapa 2.
+
+![Contactos en la ficha de un cliente](docs/capturas/85_cliente_contactos.png)
+
+![Formulario de agregar contacto](docs/capturas/86_contacto_formulario.png)
+
+![Contacto agregado](docs/capturas/87_contacto_agregado.png)
+
+![Confirmación para quitar un contacto](docs/capturas/88_contacto_quitar_confirmar.png)
+
+![Contacto quitado](docs/capturas/89_contacto_quitado.png)
+
+![Atajo Transferir: formulario con la transferencia y el destino elegidos](docs/capturas/90_atajo_transferir.png)
+
+![Protección CSRF en contactos](docs/capturas/91_csrf_contactos_403.png)
+
+#### 6.7 Inicio y reporte
+
+La página de inicio muestra los totales (con enlace a cada listado), los 5 movimientos más recientes y enlaces rápidos. El reporte reutiliza las consultas de `gestion/consultas.py`, que ahora tiene 12 funciones:
+
+| Dato del reporte | Consulta |
+|---|---|
+| Movimientos por tipo, por moneda | `resumen_por_tipo()` (etapa 4) |
+| Saldo total por cliente, por moneda | `saldo_por_cliente()`: `values` + `annotate(Sum('saldo_calculado'))` sobre la consulta de saldos |
+| Movimientos por mes | `movimientos_por_mes()`: `TruncMonth('fecha')` + `Count` |
+
+El reporte tiene una sección por moneda, porque los montos de monedas distintas no se suman entre sí. Agrupa por el `id` del cliente y no por su nombre, para que dos clientes con el mismo nombre no se mezclen.
+
+| Sección | Resultado |
+|---|---|
+| Inicio | Clientes 5, Cuentas 7, Transacciones 18 y los 5 últimos movimientos |
+| CLP, movimientos por tipo | Depósito 6 (`$610000`), Retiro 3 (`$75000`), Transferencia 6 (`$130000`) |
+| CLP, saldo por cliente | Carla Soto `$140000`, Diego Rojas `$125000`, Ana García `$115000`, Marta Vega `$95000`, Luis Pérez `$60000`; total `$535000` |
+| USD, movimientos por tipo | Depósito 2 (`US$800`), Transferencia 1 (`US$100`) |
+| USD, saldo por cliente | Ana García `US$400` y Diego Rojas `US$400`; total `US$800` |
+| Movimientos por mes | Una fila por mes; la columna Cantidad suma 18, igual que el total |
+
+Las cifras coinciden con las del comando `demo_consultas` de la etapa 4.
+
+![Inicio con totales y últimos movimientos](docs/capturas/92_inicio_ampliado.png)
+
+![Reporte, sección CLP](docs/capturas/93_reporte_clp.png)
+
+![Reporte, sección USD y movimientos por mes](docs/capturas/94_reporte_usd_meses.png)
+
+**Limitaciones conocidas:**
+
+- **Todavía no hay login.** Cualquier persona que llegue a la dirección ve todas las pantallas, incluido el enlace al panel. La etapa 7 agrega la autenticación.
+- **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso.
+- **El diseño es mínimo.** Hay un bloque de estilos temporal dentro de `base.html`, que la etapa 7 reemplaza por archivos estáticos.
+
+**Reflexiones:**
+
+- **Las vistas genéricas ahorran mucho código:** `ListView`, `DetailView`, `CreateView`, `UpdateView` y `DeleteView` resuelven lo repetitivo, y cada vista solo declara lo que la distingue.
+- **Una sola regla, todos los accesos:** poner el saldo y las cuentas inactivas en `Transaccion.clean()` hace que el panel y las pantallas las apliquen sin duplicar código.
+- **Validar dos veces tiene sentido:** el formulario da una respuesta rápida y el servicio, con la cuenta bloqueada, da la definitiva.
+- **El historial no se edita:** no hay pantallas ni permisos para modificar movimientos; un error se corrige con un movimiento inverso.
+- **Reutilizar consultas paga:** el reporte, el panel y el comando de demostración comparten `cuentas_con_saldo()`, y sus cifras coinciden.
+
 ## Flujo de Git
 
 | Rama | Propósito | Estado |
@@ -1101,8 +1466,8 @@ Esto confirma lo que quedó pendiente de la etapa 3: las reglas de `clean()` no 
 | `feature/modelos` | Definición de modelos y migraciones | Fusionada con `main` (fast-forward) |
 | `feature/consultas` | Datos de demostración y consultas personalizadas | Fusionada con `main` |
 | `feature/admin` | Idioma, nombres legibles y panel de administración | Fusionada con `main` |
-| `feature/crud` | Vistas y formularios | Pendiente |
+| `feature/crud` | Vistas, formularios, servicio de movimientos, contactos y reporte | Fusionada con `main` |
 
 ## Próximas etapas
 
-Las secciones sobre CRUD, autenticación, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
+Las secciones sobre autenticación y archivos estáticos, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
