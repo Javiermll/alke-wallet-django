@@ -1,0 +1,31 @@
+# Plano (Blueprint) del servicio en Render: describe cómo construir y ejecutar la aplicación.
+# Los valores marcados con "sync: false" son privados: se escriben a mano en el panel de Render y no se guardan en el repositorio.
+services:
+  - type: web
+    name: alke-wallet
+    runtime: python
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: gunicorn core.wsgi:application --workers 2 --timeout 120
+    healthCheckPath: /salud/          # Render consulta esta dirección para saber que la aplicación arrancó
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true           # Render inventa una clave aleatoria la primera vez
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
+      - key: DATABASE_URL             # Dirección de conexión de Neon
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: CLAVE_DEMO               # Clave de los clientes de demostración (la que publicarás en el README)
+        sync: false

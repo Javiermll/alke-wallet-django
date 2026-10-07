@@ -1,0 +1,4 @@
+# Los scripts de shell deben terminar las líneas con LF; con CRLF (el formato de Windows) Linux falla en Render
+*.sh text eol=lf
+render.yaml text eol=lf
+requirements.txt text eol=lf
