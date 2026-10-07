@@ -2,7 +2,36 @@
 
 Billetera digital desarrollada con Django para el proyecto final del **Módulo 7: Acceso a datos en aplicaciones Django** (Full Stack Python Trainee, Talento Digital / Alkemy).
 
-La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, realizar transacciones, guardar contactos frecuentes, consultar saldos y generar reportes, usando el ORM de Django, migraciones y las aplicaciones preinstaladas del framework.
+Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, retiros y transferencias, guardar contactos frecuentes, consultar saldos y generar reportes. Usa el ORM de Django, migraciones y las aplicaciones preinstaladas del framework, y funciona con SQLite en desarrollo y PostgreSQL en producción.
+
+![Inicio de Alke Wallet](docs/capturas/104_inicio_con_estilos.png)
+
+**Contenido:** [Funciones](#funciones) · [Requisitos del proyecto](#requisitos-del-proyecto-y-dónde-están) · [Tecnologías](#tecnologías) · [Instalación](#instalación-y-ejecución-local) · [Pruebas](#pruebas) · [Arquitectura](#arquitectura) · [Modelo de datos](#modelo-de-datos) · [Documentación por etapa](#documentación-por-etapa) · [Autor](#autor)
+
+## Funciones
+
+- **Clientes y cuentas:** alta, ficha, edición y eliminación con vistas basadas en clases. Cada cuenta muestra su saldo, calculado desde los movimientos.
+- **Movimientos:** depósitos, retiros y transferencias con validación de saldo, registro atómico y listado con filtros y paginación.
+- **Contactos:** agenda de contactos por cliente, con atajo para transferir.
+- **Reporte general:** movimientos por tipo, saldos por cliente y movimientos por mes, separados por moneda.
+- **Roles y seguridad:** todo es privado salvo el login y el registro. El personal administra todo; cada cliente ve y toca solo lo suyo. Los formularios exigen token CSRF.
+- **Registro y perfil:** una persona crea su usuario, su ficha y su primera cuenta, y puede cambiar su contraseña.
+- **Panel de administración** de Django con columnas, búsqueda y filtros.
+- **239 pruebas automatizadas** y un informe de pruebas.
+
+## Requisitos del proyecto y dónde están
+
+| Requisito | Dónde se cumple |
+|---|---|
+| CRUD con vistas basadas en clases | [Etapa 6](#etapa-6-pantallas-con-vistas-basadas-en-clases) |
+| Protección CSRF en los formularios | Etapas 6 y 7; comprobada en las [pruebas de seguridad](#etapa-8-pruebas-automatizadas) |
+| Modelos con relaciones 1:1, N:1 y N:M | [Modelo de datos](#modelo-de-datos) y [Etapa 2](#etapa-2-app-gestion-y-modelos) |
+| Migraciones | [Etapa 3](#etapa-3-migraciones) |
+| Consultas personalizadas (`filter`, `annotate`, `raw()`, cursores) | [Etapa 4](#etapa-4-consultas-personalizadas) |
+| SQLite en desarrollo y PostgreSQL en producción | [Etapa 1](#etapa-1-conexión-a-la-base-de-datos) y [Etapa 3](#etapa-3-migraciones) |
+| Ramas de Git por funcionalidad | [Flujo de Git](#flujo-de-git) |
+| Pruebas e informe de pruebas | [Pruebas](#pruebas) y [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx) |
+| README | Este documento |
 
 ## Estado del proyecto
 
@@ -17,7 +46,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 | 6 | Vistas CRUD basadas en clases y templates | Completada |
 | 7 | Autenticación, archivos estáticos, roles, alcance por usuario, registro y perfil | Completada |
 | 8 | Pruebas automatizadas (239 pruebas) e informe de pruebas | Completada |
-| 9 | Documentación final y demostración | Pendiente |
+| 9 | Revisión final, README final y publicación | En curso |
 
 ## Tecnologías
 
@@ -75,7 +104,7 @@ Copy-Item .env.example .env
 Contenido del `.env`:
 
 ```ini
-# Motor a usar: "sqlite" (desarrollo) o "postgres" (producción)
+# Base de datos: sqlite (desarrollo y pruebas) o postgres (producción)
 DB_ENGINE=sqlite
 
 # Datos de conexión a PostgreSQL (solo se usan si DB_ENGINE=postgres)
@@ -84,6 +113,9 @@ DB_USER=postgres
 DB_PASSWORD=escribe_aqui_tu_contraseña
 DB_HOST=localhost
 DB_PORT=5432
+
+# Clave para los usuarios de demostración (opcional; si falta, poblar_datos genera una al azar)
+CLAVE_DEMO=
 ```
 
 Para usar PostgreSQL, crear antes la base de datos vacía (`CREATE DATABASE alke_wallet;`) y cambiar `DB_ENGINE=postgres`.
@@ -138,6 +170,24 @@ Para verificar los accesos y la protección CSRF en cualquier momento:
 python manage.py verificar_accesos
 ```
 
+## Pruebas
+
+El proyecto tiene **239 pruebas automatizadas** en `gestion/tests/`, un archivo por bloque: modelos, servicios, consultas, formularios, vistas y seguridad. Se ejecutan con SQLite (deja `DB_ENGINE=sqlite` en `.env`):
+
+```powershell
+# Ejecuta todas las pruebas; Django usa una base temporal y no toca tus datos
+python manage.py test gestion
+
+# Ejecuta un bloque con detalle
+python manage.py test gestion.tests.test_seguridad -v 2
+```
+
+Resultado esperado: `Ran 239 tests` y `OK`. El detalle de los casos, los resultados y la verificación de que las pruebas detectan fallos están en [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx).
+
+**Instalación desde cero comprobada:** se clonó el repositorio en otra carpeta, se creó un entorno virtual nuevo, se instalaron las dependencias, se copió `.env.example` a `.env`, se aplicaron las migraciones, se cargaron los datos de ejemplo y las pruebas terminaron en `OK`.
+
+![Instalación desde cero y pruebas en una copia limpia](docs/capturas/143_instalacion_desde_cero.png)
+
 ## Arquitectura
 
 ```text
@@ -181,7 +231,8 @@ alke_wallet/
 │   ├── css/estilos.css        # Estilos de la aplicación
 │   └── img/logo.svg           # Logo
 ├── docs/
-│   └── capturas/              # Capturas de pantalla usadas en este README
+│   ├── capturas/              # Capturas de pantalla usadas en este README
+│   └── informe_pruebas.docx   # Informe de pruebas con casos, resultados y evidencias
 ├── manage.py                  # Utilidad de línea de comandos de Django
 ├── requirements.txt           # Dependencias del proyecto
 ├── .env                       # Credenciales locales (NO se sube a GitHub)
@@ -1766,7 +1817,9 @@ Ran 239 tests
 OK
 ```
 
-*(Captura 141: suite completa. Captura 142: `verificar_accesos`, 55 de 55 comprobaciones correctas.)*
+![Suite completa: 239 pruebas correctas](docs/capturas/141_test_todas_239.png)
+
+![verificar_accesos: 55 de 55 comprobaciones correctas](docs/capturas/142_pruebas_correctas.png)
 
 **Qué se aprendió y decisiones:**
 
@@ -1788,6 +1841,19 @@ OK
 - Un formulario se prueba con `is_valid()` y `errors`; una vista, con `self.client`, `reverse` y `assertRedirects`.
 - Sin sesión redirige al login, con rol incorrecto da 403 y con un registro ajeno da 404.
 
+### Etapa 9: revisión final y publicación
+
+**Objetivo:** dejar el proyecto listo para entregarlo y mostrarlo.
+
+**Subetapas:**
+
+| Subetapa | Qué se hizo |
+|---|---|
+| 9.1 | Revisión del repositorio: sin `.env`, base de datos, entornos virtuales ni claves escritas en el código; `.gitignore` y `.env.example` al día; migraciones sin cambios pendientes; dependencias con versiones fijas; instalación desde cero comprobada con las 239 pruebas en `OK` |
+| 9.2 | README final: introducción, funciones, tabla de requisitos con enlaces, sección de pruebas y datos del autor |
+
+**Pendiente:** la publicación del sitio en línea y la tarjeta del proyecto en el portafolio. Para publicarlo hay que pasar `SECRET_KEY`, `DEBUG` y `ALLOWED_HOSTS` a variables de entorno, servir los archivos estáticos y usar PostgreSQL; la `SECRET_KEY` actual de desarrollo no debe usarse en producción.
+
 ## Flujo de Git
 
 | Rama | Propósito | Estado |
@@ -1800,6 +1866,20 @@ OK
 | `feature/auth` | Login, estáticos, roles, alcance por usuario, registro, perfil y verificación de accesos | Fusionada con `main` |
 | `feature/tests` | Pruebas automatizadas (modelos, servicios, consultas, formularios, vistas y seguridad) e informe | Fusionada con `main` |
 
-## Próximas etapas
+## Mejoras futuras
 
-La sección de documentación final y demostración (etapa 9) se agregará cuando se complete.
+- Recuperación de contraseña por correo y verificación del correo al registrarse.
+- Bloqueo temporal tras varios intentos fallidos de ingreso.
+- Número de cuenta generado de forma segura ante registros simultáneos.
+- Medición de cobertura de código con `coverage.py` y pruebas de interfaz con un navegador automatizado.
+- Publicación en línea con PostgreSQL.
+
+## Autor
+
+**Javier** · Full Stack Python Trainee (Talento Digital / Alkemy)
+
+- GitHub: [github.com/Javiermll](https://github.com/Javiermll)
+- LinkedIn: [linkedin.com/in/jamunozll](https://linkedin.com/in/jamunozll)
+- Portafolio: [javiermll.github.io/Portafolio](https://javiermll.github.io/Portafolio)
+
+Proyecto con fines educativos, desarrollado para el Módulo 7 del bootcamp.
