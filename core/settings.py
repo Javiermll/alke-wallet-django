@@ -48,6 +48,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Exige sesión en todas las pantallas, salvo las marcadas como públicas
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -152,6 +154,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Carpetas adicionales donde Django busca archivos estáticos, además de las carpetas static/ de cada app
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Carpeta a la que collectstatic copia todos los archivos estáticos, para publicarlos en producción
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -161,3 +169,8 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Autenticación
+LOGIN_URL = 'login'# Nombre de la ruta a la que se envía a quien intenta entrar sin sesión
+LOGIN_REDIRECT_URL = 'gestion:inicio'# Nombre de la ruta a la que se va después de iniciar sesión
+LOGOUT_REDIRECT_URL = 'login'# Nombre de la ruta a la que se va después de cerrar sesión
