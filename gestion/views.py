@@ -2,6 +2,7 @@
 # Vistas de la app gestion: clientes, cuentas y transacciones
 
 
+from django.http import JsonResponse# JsonResponse responde con datos en formato JSON (lo usa la vista de salud)
 from django.contrib import messages# messages permite dejar avisos que se muestran en la siguiente página
 from django.contrib.messages.views import SuccessMessageMixin# SuccessMessageMixin agrega un aviso de éxito al crear o editar
 from django.core.exceptions import ValidationError# ValidationError es el error que lanzan las reglas de validación
@@ -452,3 +453,12 @@ class CambiarClaveView(SuccessMessageMixin, PasswordChangeView):
     template_name = 'registration/cambiar_clave.html'# Template que se muestra
     success_url = reverse_lazy('gestion:perfil')# Dirección a la que se va después de cambiarla: el perfil
     success_message = 'Tu contraseña se cambió correctamente.'# Aviso de éxito
+
+# ============================================================
+# SALUD DEL SERVICIO
+# ============================================================
+
+# Responde {"estado": "ok"} sin consultar la base de datos ni pedir sesión.
+# La usa Render (healthCheckPath) para saber que la aplicación arrancó y puede recibir visitas.
+def salud(request):
+    return JsonResponse({'estado': 'ok'})# Datos de la respuesta
