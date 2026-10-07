@@ -1,11 +1,17 @@
 # gestion/management/commands/poblar_datos.py
 
+
+import os  # os lee variables del entorno; secrets genera claves aleatorias seguras
+import secrets
 from django.core.management.base import BaseCommand   # Importa la clase base para crear comandos propios de manage.py
 from django.contrib.auth.models import User  # Importa el usuario de login de Django
 from django.utils import timezone  # Importa timezone para obtener la fecha y hora actual
 from datetime import timedelta  # Importa timedelta para restar días a una fecha
 from gestion.models import Moneda, Cliente, Contacto, Cuenta, Transaccion  # Importa nuestros modelos
-CLAVE_DEMO = 'Demo12345!'  # Contraseña de los usuarios de demostración nuevos (solo para pruebas locales)
+
+# Clave de los usuarios de demostración nuevos: se lee de .env (variable CLAVE_DEMO) o, si no existe, se genera al azar
+# Así no hay ninguna clave escrita en el código
+CLAVE_DEMO = os.environ.get('CLAVE_DEMO') or secrets.token_urlsafe(9)
 
 # Lista de monedas: (código, nombre, símbolo)
 MONEDAS = [
@@ -109,6 +115,8 @@ class Command(BaseCommand):
             # Solo a los usuarios nuevos se les asigna contraseña (se guarda cifrada)
             if usuario_creado:
                 usuario.set_password(CLAVE_DEMO)
+                # Muestra la clave una sola vez, porque no queda guardada en ningún archivo
+                print(f'  Usuario {usuario.username}: clave {CLAVE_DEMO}')
                 usuario.save()
 
             # Busca el cliente de ese usuario; si no existe, lo crea con los datos de defaults
