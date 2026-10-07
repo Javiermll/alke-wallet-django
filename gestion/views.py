@@ -23,7 +23,7 @@ from .servicios import registrar_transaccion # Función que registra movimientos
 from django.utils.functional import cached_property# Para recordar un valor calculado dentro de la vista
 from .alcance import limitar_a_cliente, movimientos_visibles# Funciones que limitan los datos al cliente de la sesión
 from django.contrib.auth import login# login inicia la sesión de un usuario desde el código
-
+from django.contrib.auth.views import PasswordChangeView# Pantalla ya hecha de Django para cambiar la contraseña (pide la actual y la nueva dos veces)
 
 # ============================================================
 # INICIO
@@ -437,3 +437,18 @@ class RegistroView(FormView):
         login(self.request, usuario)# Inicia la sesión de inmediato, para que no tenga que escribir de nuevo sus datos
         messages.success(self.request, '¡Bienvenido a Alke Wallet! Tu cuenta quedó creada.')# Aviso de bienvenida
         return redirect('gestion:inicio')# Va al inicio, donde ve su cuenta
+
+# ============================================================
+# PERFIL
+# ============================================================
+
+# Perfil de la persona con sesión: sus datos de acceso y, si es cliente, sus datos de cliente
+class PerfilView(TemplateView):
+    template_name = 'perfil.html'# Template que se muestra
+
+
+# Cambio de contraseña de la persona con sesión
+class CambiarClaveView(SuccessMessageMixin, PasswordChangeView):
+    template_name = 'registration/cambiar_clave.html'# Template que se muestra
+    success_url = reverse_lazy('gestion:perfil')# Dirección a la que se va después de cambiarla: el perfil
+    success_message = 'Tu contraseña se cambió correctamente.'# Aviso de éxito

@@ -41,4 +41,8 @@ urlpatterns = [
 
         # ---------- Reporte ----------
     path('reporte/', views.ReporteView.as_view(), name='reporte'), # Reporte general con las consultas de la etapa 4
+
+        # ---------- Perfil ----------
+    path('perfil/', views.PerfilView.as_view(), name='perfil'),# Datos de la persona con sesión y cambio de contraseña
+    path('perfil/clave/', views.CambiarClaveView.as_view(), name='cambiar_clave'),
 ]
