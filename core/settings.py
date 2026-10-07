@@ -148,6 +148,12 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Muestra los números con separador de miles según el idioma (es-cl): 115000,00 se ve como 115.000,00
+USE_THOUSAND_SEPARATOR = True
+
+# Carpeta con formatos propios (core/formats/es_CL/formats.py): hace que el separador de miles sea el punto y no un espacio
+FORMAT_MODULE_PATH = ['core.formats']
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
