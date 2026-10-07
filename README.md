@@ -16,7 +16,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 | 5 | Panel de administración | Completada |
 | 6 | Vistas CRUD basadas en clases y templates | Completada |
 | 7 | Autenticación, archivos estáticos, roles, alcance por usuario, registro y perfil | Completada |
-| 8 | Pruebas | Pendiente |
+| 8 | Pruebas automatizadas (239 pruebas) e informe de pruebas | Completada |
 | 9 | Documentación final y demostración | Pendiente |
 
 ## Tecnologías
@@ -129,7 +129,7 @@ Todas las pantallas piden iniciar sesión, salvo el login (`/acceso/login/`) y e
 | Cliente | `ana`, `luis`, `carla`, `diego` o `marta` (los crea `poblar_datos`) | Solo sus propias cuentas, movimientos y agenda |
 | Sin cliente | Un usuario creado en el panel sin ficha de cliente | Solo el perfil y un aviso en el inicio |
 
-Los usuarios de ejemplo creados por `poblar_datos` usan la clave de demostración `Demo12345!`. Es solo para datos de ejemplo; nunca se usa una clave real en este proyecto.
+Al crear los usuarios de ejemplo, `poblar_datos` genera una clave aleatoria y la muestra una sola vez en pantalla. Si se prefiere una clave propia para la demostración, se define en el archivo `.env` con la variable `CLAVE_DEMO` (ese archivo no se sube al repositorio). El código no contiene ninguna clave escrita.
 
 Para verificar los accesos y la protección CSRF en cualquier momento:
 
@@ -165,7 +165,7 @@ alke_wallet/
 │   ├── admin.py               # Panel de administración: columnas, búsqueda, filtros y tablas anidadas
 │   ├── views.py               # Vistas basadas en clases: CRUD, inicio, reporte, registro y perfil
 │   ├── urls.py                # Rutas de la app, con nombre
-│   └── tests.py               # Pruebas (etapa 8)
+│   └── tests/                 # Pruebas automatizadas (etapa 8), un archivo por bloque
 ├── templates/
 │   ├── base.html              # Plantilla común: encabezado, menú, mensajes y pie
 │   ├── inicio.html            # Página de inicio (distinta para personal y clientes)
@@ -1714,7 +1714,7 @@ Resultado: **55 de 55 pruebas correctas**. Las pruebas unitarias formales y el i
 - **No hay recuperación de contraseña por correo** ni verificación del correo al registrarse; requeriría configurar un servidor de correo.
 - **El número de cuenta es «el mayor más uno».** Con muchos registros simultáneos podría repetirse un número y fallar un registro; para este proyecto es suficiente.
 - **Solo el personal abre cuentas adicionales** y gestiona clientes; un cliente tiene la cuenta inicial del registro.
-- **Los usuarios de ejemplo comparten una clave de demostración**, que debe cambiarse si el sistema se publica.
+- **Las claves de los usuarios de ejemplo** son aleatorias o salen de `CLAVE_DEMO`; los datos de ejemplo no deben usarse en un sistema publicado.
 - **No hay bloqueo por intentos fallidos de ingreso.**
 
 **Reflexiones:**
@@ -1724,6 +1724,69 @@ Resultado: **55 de 55 pruebas correctas**. Las pruebas unitarias formales y el i
 - **Ocultar un enlace no es seguridad:** el menú por rol es comodidad; las reglas viven en las vistas y se comprueban con `verificar_accesos`.
 - **El orden importa:** el mixin de rol debe ejecutarse antes de cualquier código que use `request.user.cliente`.
 - **Comprobar con datos temporales** permite repetir las pruebas sin ensuciar la base de datos.
+
+### Etapa 8: pruebas automatizadas
+
+**Objetivo:** comprobar con pruebas automáticas que las reglas de negocio, los formularios, las pantallas y la seguridad funcionan, y que las pruebas fallan cuando una regla se rompe.
+
+**Rama de trabajo:** `feature/tests`. Esta etapa no cambia los modelos, por lo que no genera migraciones. El informe formal está en [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx).
+
+**Cómo se organizan:** la carpeta `gestion/tests/` reemplaza al archivo `tests.py` y tiene un archivo por bloque. `utilidades.py` reúne funciones que crean datos de prueba (moneda, cliente, cuenta, depósito y usuario del personal) para no repetir código.
+
+**Subetapas:**
+
+| Subetapa | Archivo | Pruebas | Qué revisa |
+|---|---|---|---|
+| 8.0 | `test_humo.py` | 5 | Que el entorno de pruebas funciona: base vacía, aislamiento y login |
+| 8.1 | `test_modelos.py` | 42 | Restricciones, validaciones, saldo y protección al borrar |
+| 8.2 | `test_servicios.py` | 21 | Movimientos atómicos, bloqueo de la cuenta origen y alta de cliente con cuenta |
+| 8.3 | `test_consultas.py` | 31 | Filtros, agregaciones, saldos y consultas SQL propias |
+| 8.4 | `test_formularios.py` | 41 | Opciones, validaciones y mensajes de cada formulario |
+| 8.4 | `test_vistas.py` | 49 | CRUD, filtros, paginación, avisos y protecciones, como personal |
+| 8.5 | `test_seguridad.py` | 50 | Roles, alcance por cliente, reglas de operación, CSRF y sesión |
+| 8.6 | `docs/informe_pruebas.docx` | | Informe con tabla de casos, resultados y evidencias |
+
+**Cómo ejecutarlas** (con `DB_ENGINE=sqlite` en `.env`):
+
+```bash
+# Todas las pruebas
+python manage.py test gestion
+
+# Un bloque con detalle
+python manage.py test gestion.tests.test_seguridad -v 2
+
+# Comprobación manual de accesos (no deja datos)
+python manage.py verificar_accesos
+```
+
+**Resultado:**
+
+```text
+Ran 239 tests
+OK
+```
+
+*(Captura 141: suite completa. Captura 142: `verificar_accesos`, 55 de 55 comprobaciones correctas.)*
+
+**Qué se aprendió y decisiones:**
+
+- **Las pruebas usan una base temporal.** Django crea una base vacía, deshace cada prueba y la elimina al final; los datos reales no se tocan.
+- **`force_login` y usuarios sin contraseña** evitan cifrar una clave en cada prueba, que era lo más lento (de 23 s a menos de 1 s en los modelos). Las pocas pruebas que necesitan una clave real usan `secrets`, así no hay contraseñas escritas en el código.
+- **CSRF solo se prueba con `Client(enforce_csrf_checks=True)`.** El cliente normal de las pruebas se salta esa revisión.
+- **Una prueba vale si falla cuando se rompe la regla.** Se rompió a propósito cada regla de seguridad y se comprobó que al menos una prueba fallaba; los resultados están en el informe.
+- **En una prueba que falló al principio** la causa era la prueba y no el código: pedir la página 2 sin tener 11 movimientos devuelve 404.
+
+**Limitaciones conocidas:**
+
+- Las pruebas se ejecutaron en SQLite. En PostgreSQL funcionan igual, pero el usuario de la base necesita permiso `CREATEDB` para crear la base de pruebas.
+- En SQLite, `LIKE` ya ignora mayúsculas, así que quitar `LOWER()` de la búsqueda SQL propia no se detecta con esta base.
+- `select_for_update` solo tiene efecto real en PostgreSQL; la concurrencia no se prueba de forma automática.
+- No se mide la cobertura de código con `coverage.py`.
+
+**Si solo recuerdas esto:**
+
+- Un formulario se prueba con `is_valid()` y `errors`; una vista, con `self.client`, `reverse` y `assertRedirects`.
+- Sin sesión redirige al login, con rol incorrecto da 403 y con un registro ajeno da 404.
 
 ## Flujo de Git
 
@@ -1735,7 +1798,8 @@ Resultado: **55 de 55 pruebas correctas**. Las pruebas unitarias formales y el i
 | `feature/admin` | Idioma, nombres legibles y panel de administración | Fusionada con `main` |
 | `feature/crud` | Vistas, formularios, servicio de movimientos, contactos y reporte | Fusionada con `main` |
 | `feature/auth` | Login, estáticos, roles, alcance por usuario, registro, perfil y verificación de accesos | Fusionada con `main` |
+| `feature/tests` | Pruebas automatizadas (modelos, servicios, consultas, formularios, vistas y seguridad) e informe | Fusionada con `main` |
 
 ## Próximas etapas
 
-Las secciones sobre pruebas (etapa 8) y documentación final y demostración (etapa 9) se agregarán a medida que se completen las etapas correspondientes.
+La sección de documentación final y demostración (etapa 9) se agregará cuando se complete.
