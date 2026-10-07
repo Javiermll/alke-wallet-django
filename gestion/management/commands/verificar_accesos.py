@@ -1,4 +1,5 @@
 import logging# logging permite silenciar los avisos que Django escribe en consola cuando responde 403 o 404
+import secrets# secrets genera claves aleatorias seguras
 from django.core.management.base import BaseCommand, CommandError# BaseCommand es la base de los comandos de manage.py; CommandError corta el comando con un mensaje de error
 from django.contrib.auth.models import User# User es el modelo de usuarios de Django
 from django.db import transaction# transaction.atomic permite crear datos de prueba y deshacerlos al final
@@ -53,13 +54,15 @@ class Command(BaseCommand):
     # Crea los datos de prueba y recorre todas las comprobaciones
     def ejecutar_pruebas(self):
         # ---------- datos de prueba (se deshacen al final) ----------
+        # Clave aleatoria solo para esta ejecución; los usuarios de prueba se deshacen al final
+        clave = secrets.token_urlsafe(9)
         # Moneda: usa una existente o crea una de prueba
         moneda = Moneda.objects.first() or Moneda.objects.create(codigo='TST', nombre='Prueba', simbolo='T')
         # Usuario del personal, usuario cliente A, usuario cliente B y usuario sin cliente
-        personal = User.objects.create_user('_prueba_personal', password='x', is_staff=True)
-        usuario_a = User.objects.create_user('_prueba_a', password='x')
-        usuario_b = User.objects.create_user('_prueba_b', password='x')
-        sin_cliente = User.objects.create_user('_prueba_sin', password='x')
+        personal = User.objects.create_user('_prueba_personal', password=clave, is_staff=True)
+        usuario_a = User.objects.create_user('_prueba_a', password=clave)
+        usuario_b = User.objects.create_user('_prueba_b', password=clave)
+        sin_cliente = User.objects.create_user('_prueba_sin', password=clave)
         # Dos clientes con una cuenta cada uno
         cliente_a = Cliente.objects.create(usuario=usuario_a, nombre='Prueba A', email='_a@prueba.test')
         cliente_b = Cliente.objects.create(usuario=usuario_b, nombre='Prueba B', email='_b@prueba.test')
@@ -117,7 +120,7 @@ class Command(BaseCommand):
 
         # ---------- 5. CSRF ----------
         # Con enforce_csrf_checks=True, un POST sin token debe responder 403
-        self.anotar('CSRF: login sin token', 403, navegador(csrf=True).post('/acceso/login/', {'username': 'x', 'password': 'x'}))
+        self.anotar('CSRF: login sin token', 403, navegador(csrf=True).post('/acceso/login/', {'username': 'x', 'password': clave}))
         self.anotar('CSRF: registro sin token', 403, navegador(csrf=True).post('/registro/', {}))
         nav = navegador(usuario_a, csrf=True)
         self.anotar('CSRF: cerrar sesión sin token', 403, nav.post('/acceso/logout/'))
@@ -132,4 +135,4 @@ class Command(BaseCommand):
         token = anon_csrf.cookies['csrftoken'].value
         # Clave incorrecta: el formulario vuelve con el error (200), no con 403
         self.anotar('CSRF: login con token (clave mala) se procesa', 200,
-                    anon_csrf.post('/acceso/login/', {'username': '_prueba_a', 'password': 'mala', 'csrfmiddlewaretoken': token}))
+                    anon_csrf.post('/acceso/login/', {'username': '_prueba_a', 'password': clave + '-incorrecta', 'csrfmiddlewaretoken': token}))
