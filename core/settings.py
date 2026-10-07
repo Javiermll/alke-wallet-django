@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 import os # "os" permite leer variables de entorno del sistema
+import dj_database_url  # Convierte una dirección DATABASE_URL (la que entregan Neon y Render) en la configuración de Django
+from django.core.exceptions import ImproperlyConfigured  # Error que se lanza cuando falta una configuración obligatoria
 from dotenv import load_dotenv  # load_dotenv lee el archivo .env y carga sus valores como variables de entorno
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,13 +23,24 @@ load_dotenv(BASE_DIR / '.env')   # Carga las variables del archivo .env que est�
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_6c*g0_9m%x_=7x$ot&s2i=&(*)u=%zll=fc@^mqhu(@ibwlhu'
+# Estas tres configuraciones cambian entre tu equipo y el servidor, por eso se leen del entorno (archivo .env o panel de Render).
+# Si la variable no existe se usa el valor de desarrollo, así el proyecto sigue funcionando en local sin configurar nada.
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG es True solo si la variable DEBUG vale true/1/yes; en Render se define DEBUG=False
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = []
+# SECURITY WARNING: keep the secret key used in production secret!
+# La clave de desarrollo es pública (está en el repositorio), por eso en producción se exige una propia
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-_6c*g0_9m%x_=7x$ot&s2i=&(*)u=%zll=fc@^mqhu(@ibwlhu')
+if not DEBUG and SECRET_KEY.startswith('django-insecure-'):
+    raise ImproperlyConfigured('En producción (DEBUG=False) hay que definir la variable de entorno SECRET_KEY.')
+
+# Direcciones desde las que se puede entrar, separadas por coma; ejemplo en Render: .onrender.com (el punto inicial incluye todos los subdominios)
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
+
+# Orígenes desde los que se aceptan formularios (protección CSRF); en HTTPS deben incluir el esquema, ejemplo: https://*.onrender.com
+CSRF_TRUSTED_ORIGINS = [origen.strip() for origen in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origen.strip()]
 
 
 # Application definition
@@ -44,6 +57,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise sirve los archivos estáticos (CSS, JS, imágenes) desde la propia aplicación; en Render no hay otro servidor que lo haga
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,8 +100,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Lee del .env qué motor usar; si la variable no existe, usa "sqlite" por defecto
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite')
 
+# Si existe la variable DATABASE_URL (Render y Neon la entregan), tiene prioridad sobre todo lo demás:
+# una sola dirección con usuario, clave, servidor y base de datos
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        # conn_max_age mantiene abierta la conexión 10 minutos; conn_health_checks la revisa antes de reutilizarla
+        'default': dj_database_url.config(conn_max_age=600, conn_health_checks=True),
+    }
 # Si en el .env pusimos "postgres", configuramos la conexión a PostgreSQL
-if DB_ENGINE == 'postgres':
+elif DB_ENGINE == 'postgres':
     DATABASES = {
         'default': {
             # Le dice a Django que use el adaptador de PostgreSQL (psycopg2)
@@ -165,6 +187,39 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Carpeta a la que collectstatic copia todos los archivos estáticos, para publicarlos en producción
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Cómo se guardan y sirven los estáticos. En producción (DEBUG=False) WhiteNoise los comprime y les pone un código en el nombre
+# (estilos.3f2a1b.css), así el navegador descarga la versión nueva cuando cambian. Esa versión necesita haber ejecutado collectstatic,
+# por eso en desarrollo (DEBUG=True) se usa el almacenamiento normal.
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG
+        else 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
+# ---------- Seguridad y registros en producción ----------
+if not DEBUG:
+    # Render atiende el HTTPS por fuera y le pasa a Django la petición como HTTP; este encabezado le avisa que el original era HTTPS
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True  # Redirige cualquier visita HTTP a HTTPS
+    SECURE_REDIRECT_EXEMPT = [r'^salud/$']  # La comprobación de Render entra por HTTP interno y no debe ser redirigida
+    SESSION_COOKIE_SECURE = True  # La cookie de sesión solo viaja por HTTPS
+    CSRF_COOKIE_SECURE = True  # La cookie del token CSRF solo viaja por HTTPS
+    SECURE_HSTS_SECONDS = 3600  # El navegador recordará usar solo HTTPS durante 1 hora (se puede subir cuando todo esté estable)
+
+# Registros: con DEBUG=False Django no muestra los errores en ninguna parte por defecto.
+# Esta configuración los envía a la consola, que es lo que Render muestra en la pestaña Logs.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'consola': {'class': 'logging.StreamHandler'}},
+    'root': {'handlers': ['consola'], 'level': 'INFO'},
+    'loggers': {
+        'django.request': {'handlers': ['consola'], 'level': 'ERROR', 'propagate': False},
+    },
+}
 
 
 # Email
