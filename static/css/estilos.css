@@ -1,0 +1,316 @@
+/* ============================================================
+   Alke Wallet: estilos generales de todas las pantallas
+   ============================================================ */
+
+/* Variables: colores y medidas que se definen una vez y se usan en todo el archivo */
+:root {
+    --color-principal: #1d4e89;
+    --color-principal-oscuro: #153a68;
+    --color-fondo: #eef2f7;
+    --color-texto: #1f2933;
+    --color-gris: #667085;
+    --color-borde: #d5dbe3;
+    --color-fila: #f6f8fb;
+    --color-exito: #2f9e5a;
+    --color-exito-fondo: #e1f5e8;
+    --color-error: #c0392b;
+    --color-error-fondo: #fde8e6;
+    --color-aviso: #d9a400;
+    --color-aviso-fondo: #fff6d9;
+    --color-info-fondo: #e6eefa;
+    --radio: 6px;
+}
+
+/* El fondo de toda la página es un gris azulado suave */
+html {
+    background: var(--color-fondo);
+}
+
+/* El contenido va en una tarjeta blanca centrada, de ancho máximo 960px */
+body {
+    max-width: 960px;
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+    background: #ffffff;
+    color: var(--color-texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    border-radius: var(--radio);
+    box-shadow: 0 1px 4px rgba(16, 24, 40, 0.12);
+}
+
+/* Encabezado: la marca arriba y el menú debajo */
+header {
+    margin-bottom: 0.5rem;
+}
+
+/* La marca junta el logo y el nombre en una fila */
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Tamaño del logo */
+.marca img {
+    width: 40px;
+    height: 40px;
+}
+
+/* Títulos */
+h1, h2, h3, h4 {
+    color: var(--color-principal);
+    line-height: 1.25;
+}
+
+/* El título del sitio no lleva margen para quedar alineado con el logo */
+h1 {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+/* Línea separadora */
+hr {
+    border: none;
+    border-top: 1px solid var(--color-borde);
+    margin: 1rem 0;
+}
+
+/* Enlaces */
+a {
+    color: var(--color-principal);
+}
+
+a:hover {
+    color: var(--color-principal-oscuro);
+}
+
+/* ---------- Menú ---------- */
+
+/* Los enlaces del menú van en una fila que baja de línea si falta espacio */
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+}
+
+/* Cada enlace del menú parece un botón plano */
+nav a {
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radio);
+    text-decoration: none;
+}
+
+/* Al pasar el ratón, el enlace se resalta */
+nav a:hover {
+    background: var(--color-info-fondo);
+}
+
+/* El texto de la sesión se empuja hacia la derecha */
+nav .sesion {
+    margin-left: auto;
+    padding-right: 0.5rem;
+    color: var(--color-gris);
+}
+
+/* El formulario de cerrar sesión queda en la misma fila del menú */
+nav form {
+    display: inline;
+}
+
+/* ---------- Botones ---------- */
+
+/* Aspecto general de los botones */
+button {
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: var(--radio);
+    background: var(--color-principal);
+    color: #ffffff;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--color-principal-oscuro);
+}
+
+/* El botón de cerrar sesión es más discreto: solo borde */
+nav button {
+    padding: 0.3rem 0.8rem;
+    background: transparent;
+    color: var(--color-principal);
+    border: 1px solid var(--color-principal);
+}
+
+nav button:hover {
+    background: var(--color-info-fondo);
+}
+
+/* ---------- Tablas ---------- */
+
+/* Las tablas ocupan todo el ancho y comparten bordes */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0 1.25rem;
+}
+
+/* Celdas */
+th, td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-borde);
+    text-align: left;
+}
+
+/* Encabezado de la tabla */
+thead th {
+    background: var(--color-principal);
+    color: #ffffff;
+    border-bottom: none;
+}
+
+/* Filas alternadas para leer mejor */
+tbody tr:nth-child(even) {
+    background: var(--color-fila);
+}
+
+/* La fila bajo el ratón se resalta */
+tbody tr:hover {
+    background: var(--color-info-fondo);
+}
+
+/* Fila de totales al pie de una tabla */
+tfoot th {
+    background: var(--color-fila);
+    color: var(--color-texto);
+    border-top: 2px solid var(--color-principal);
+}
+
+/* ---------- Formularios ---------- */
+
+/* Separación entre un campo y el siguiente */
+form p {
+    margin: 0 0 1rem;
+}
+
+/* Las etiquetas van sobre cada campo */
+form label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+/* Campos de texto y listas desplegables */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    max-width: 26rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    font-size: 1rem;
+}
+
+/* Al escribir en un campo, se resalta con el color principal */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid var(--color-principal);
+    outline-offset: 1px;
+}
+
+/* Texto de ayuda bajo un campo */
+.helptext {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--color-gris);
+    font-size: 0.875rem;
+}
+
+/* Mensajes de error de los formularios */
+.errorlist {
+    margin: 0 0 0.5rem;
+    padding: 0.5rem 0.75rem;
+    list-style: none;
+    color: var(--color-error);
+    background: var(--color-error-fondo);
+    border-radius: var(--radio);
+    font-size: 0.9rem;
+}
+
+/* ---------- Avisos de las vistas (mensajes de éxito y de error) ---------- */
+
+/* Lista de avisos sin viñetas */
+.mensajes {
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+/* Aspecto base de cada aviso: franja de color a la izquierda */
+.mensajes li {
+    margin-bottom: 0.5rem;
+    padding: 0.7rem 1rem;
+    border-left: 4px solid var(--color-gris);
+    border-radius: var(--radio);
+    background: var(--color-info-fondo);
+}
+
+/* Un color por tipo de aviso */
+.mensajes .success {
+    border-left-color: var(--color-exito);
+    background: var(--color-exito-fondo);
+}
+
+.mensajes .error {
+    border-left-color: var(--color-error);
+    background: var(--color-error-fondo);
+}
+
+.mensajes .warning {
+    border-left-color: var(--color-aviso);
+    background: var(--color-aviso-fondo);
+}
+
+/* Aviso destacado dentro de una página (por ejemplo, un usuario sin cliente asociado) */
+.aviso {
+    margin: 0 0 1rem;
+    padding: 0.7rem 1rem;
+    border-left: 4px solid var(--color-aviso);
+    border-radius: var(--radio);
+    background: var(--color-aviso-fondo);
+}
+
+/* ---------- Pie de página ---------- */
+
+footer {
+    color: var(--color-gris);
+}
+
+/* ---------- Pantallas pequeñas (celulares) ---------- */
+
+/* En pantallas angostas, la tarjeta ocupa todo el ancho y las tablas se pueden desplazar */
+@media (max-width: 640px) {
+    body {
+        margin: 0;
+        border-radius: 0;
+        padding: 1rem;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    nav .sesion {
+        margin-left: 0;
+    }
+}
