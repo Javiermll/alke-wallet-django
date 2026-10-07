@@ -6,33 +6,61 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Mi perfil</h2>
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <span class="avatar avatar-lg">{{ user.get_username|slice:":1"|upper }}</span>
+        <div>
+            <h2 class="fw-bold mb-0">Mi perfil</h2>
+            <p class="text-muted mb-0">{{ user.get_username }}</p>
+        </div>
+    </div>
 
-    {# Datos de acceso: los tiene toda persona con sesión #}
-    <h3>Datos de acceso</h3>
-    <ul>
-        <li>Usuario: <strong>{{ user.get_username }}</strong></li>
-        <li>Rol: {% if user.is_staff %}personal{% elif user.cliente %}cliente{% else %}sin cliente asociado{% endif %}</li>
-        {# date da formato a la fecha; si nunca ha entrado, last_login está vacío #}
-        <li>Último ingreso: {{ user.last_login|date:"d/m/Y H:i"|default:"primer ingreso" }}</li>
-    </ul>
+    <div class="row g-4">
+        {# Datos de acceso: los tiene toda persona con sesión #}
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-shield-check me-2"></i>Datos de acceso</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted fw-normal">Usuario</dt>
+                        <dd class="col-sm-7 fw-semibold">{{ user.get_username }}</dd>
+                        <dt class="col-sm-5 text-muted fw-normal">Rol</dt>
+                        <dd class="col-sm-7">{% if user.is_staff %}Personal{% elif user.cliente %}Cliente{% else %}Sin cliente asociado{% endif %}</dd>
+                        {# date da formato a la fecha; si nunca ha entrado, last_login está vacío #}
+                        <dt class="col-sm-5 text-muted fw-normal">Último ingreso</dt>
+                        <dd class="col-sm-7 mb-0">{{ user.last_login|date:"d/m/Y H:i"|default:"primer ingreso" }}</dd>
+                    </dl>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    {# Cambiar la contraseña lo puede hacer cualquier persona con sesión #}
+                    <a href="{% url 'gestion:cambiar_clave' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-key me-1"></i>Cambiar mi contraseña</a>
+                </div>
+            </div>
+        </div>
 
-    {# Datos de cliente: solo si la persona tiene un cliente asociado #}
-    {% if user.cliente %}
-        <h3>Datos de cliente</h3>
-        <ul>
-            <li>Nombre: {{ user.cliente.nombre }}</li>
-            <li>Correo: {{ user.cliente.email }}</li>
-            {# Si no hay teléfono (NULL), muestra un texto en su lugar #}
-            <li>Teléfono: {{ user.cliente.telefono|default:"sin registrar" }}</li>
-            <li>Cliente desde: {{ user.cliente.fecha_registro|date:"d/m/Y" }}</li>
-        </ul>
-        <p>
-            <a href="{% url 'gestion:cliente_editar' user.cliente.pk %}">Editar mis datos</a> ·
-            <a href="{% url 'gestion:cliente_detalle' user.cliente.pk %}">Ver mi ficha</a>
-        </p>
-    {% endif %}
-
-    {# Cambiar la contraseña lo puede hacer cualquier persona con sesión #}
-    <p><a href="{% url 'gestion:cambiar_clave' %}">Cambiar mi contraseña</a></p>
+        {# Datos de cliente: solo si la persona tiene un cliente asociado #}
+        {% if user.cliente %}
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header"><i class="bi bi-person-vcard me-2"></i>Datos de cliente</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5 text-muted fw-normal">Nombre</dt>
+                            <dd class="col-sm-7 fw-semibold">{{ user.cliente.nombre }}</dd>
+                            <dt class="col-sm-5 text-muted fw-normal">Correo</dt>
+                            <dd class="col-sm-7">{{ user.cliente.email }}</dd>
+                            {# Si no hay teléfono (NULL), muestra un texto en su lugar #}
+                            <dt class="col-sm-5 text-muted fw-normal">Teléfono</dt>
+                            <dd class="col-sm-7">{{ user.cliente.telefono|default:"sin registrar" }}</dd>
+                            <dt class="col-sm-5 text-muted fw-normal">Cliente desde</dt>
+                            <dd class="col-sm-7 mb-0">{{ user.cliente.fecha_registro|date:"d/m/Y" }}</dd>
+                        </dl>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pb-3 d-flex flex-wrap gap-2">
+                        <a href="{% url 'gestion:cliente_editar' user.cliente.pk %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i>Editar mis datos</a>
+                        <a href="{% url 'gestion:cliente_detalle' user.cliente.pk %}" class="btn btn-outline-primary btn-sm">Ver mi ficha</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}

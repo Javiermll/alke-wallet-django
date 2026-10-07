@@ -8,42 +8,58 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Clientes</h2>
-    {# Enlace al formulario para crear un cliente #}
-    <p><a href="{% url 'gestion:cliente_nuevo' %}">Nuevo cliente</a></p>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Clientes</h2>
+            <p class="text-muted mb-0">Personas registradas en Alke Wallet.</p>
+        </div>
+        {# Enlace al formulario para crear un cliente #}
+        <a href="{% url 'gestion:cliente_nuevo' %}" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Nuevo cliente</a>
+    </div>
 
     {# Si hay clientes, muestra la tabla; si no, un aviso #}
-    {% if clientes %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Correo electrónico</th>
-                    <th>Teléfono</th>
-                    <th>Cuentas</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {# Recorre la lista que entrega la vista; "cliente" es cada fila #}
-                {% for cliente in clientes %}
-                    <tr>
-                        {# El nombre es un enlace a la ficha; cliente.pk va en la dirección #}
-                        <td><a href="{% url 'gestion:cliente_detalle' cliente.pk %}">{{ cliente.nombre }}</a></td>
-                        <td>{{ cliente.email }}</td>
-                        {# default muestra un guion si el teléfono está vacío #}
-                        <td>{{ cliente.telefono|default:"-" }}</td>
-                        {# num_cuentas lo calculó la vista con annotate #}
-                        <td>{{ cliente.num_cuentas }}</td>
-                        <td>
-                            <a href="{% url 'gestion:cliente_editar' cliente.pk %}">Editar</a>
-                            <a href="{% url 'gestion:cliente_eliminar' cliente.pk %}">Eliminar</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No hay clientes registrados.</p>
-    {% endif %}
+    <div class="card">
+        {% if clientes %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th class="d-none d-md-table-cell">Correo electrónico</th>
+                            <th class="d-none d-lg-table-cell">Teléfono</th>
+                            <th class="text-center">Cuentas</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Recorre la lista que entrega la vista; "cliente" es cada fila #}
+                        {% for cliente in clientes %}
+                            <tr>
+                                {# El nombre es un enlace a la ficha; cliente.pk va en la dirección #}
+                                <td>
+                                    <a href="{% url 'gestion:cliente_detalle' cliente.pk %}" class="d-flex align-items-center gap-2 text-decoration-none fw-semibold">
+                                        <span class="avatar">{{ cliente.nombre|slice:":1"|upper }}</span>{{ cliente.nombre }}
+                                    </a>
+                                    {# En celular la columna Correo se oculta; se muestra bajo el nombre #}
+                                    <div class="d-md-none small text-muted ms-5 ps-1">{{ cliente.email }}</div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ cliente.email }}</td>
+                                {# default muestra un guion si el teléfono está vacío #}
+                                <td class="d-none d-lg-table-cell">{{ cliente.telefono|default:"-" }}</td>
+                                {# num_cuentas lo calculó la vista con annotate #}
+                                <td class="text-center"><span class="badge rounded-pill text-bg-light border">{{ cliente.num_cuentas }}</span></td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{% url 'gestion:cliente_detalle' cliente.pk %}" class="btn btn-sm btn-outline-secondary" title="Ver ficha"><i class="bi bi-eye"></i></a>
+                                    <a href="{% url 'gestion:cliente_editar' cliente.pk %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                    <a href="{% url 'gestion:cliente_eliminar' cliente.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-center text-muted py-5">No hay clientes registrados.</div>
+        {% endif %}
+    </div>
 {% endblock %}

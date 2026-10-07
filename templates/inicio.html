@@ -6,72 +6,131 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Bienvenido a Alke Wallet</h2>
+    {# Banner de bienvenida con las acciones principales; el degradado lo define la clase banner-inicio en estilos.css #}
+    <section class="banner-inicio text-white mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                {# now con formato escribe la fecha de hoy; \d\e escribe la palabra "de" tal cual #}
+                <span class="small opacity-75 d-block mb-1 primera-mayuscula">{% now "l j \d\e F" %}</span>
+                <h1 class="h2 fw-bold text-white mb-1">Hola, {{ user.get_username }}</h1>
+                <p class="mb-0 opacity-75">{% if user.is_staff %}Este es el resumen de todo lo que hay registrado en Alke Wallet.{% else %}Aquí tienes tus cuentas y tus últimos movimientos.{% endif %}</p>
+            </div>
+            {# Acciones rápidas: una sola columna en celular, en fila desde tablet #}
+            {% if user.is_staff or user.cliente %}
+                <div class="d-grid d-md-flex gap-2">
+                    <a href="{% url 'gestion:transaccion_nueva' %}" class="btn btn-light fw-semibold"><i class="bi bi-plus-lg me-1"></i>Nuevo movimiento</a>
+                    {% if user.is_staff %}
+                        <a href="{% url 'gestion:reporte' %}" class="btn btn-outline-light"><i class="bi bi-bar-chart-line me-1"></i>Reporte</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
 
     {# Una persona con sesión que no es del personal y no tiene un cliente asociado no puede usar el sistema todavía #}
     {% if not user.is_staff and not user.cliente %}
-        <p class="aviso">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
             Tu usuario todavía no tiene un cliente asociado. Pide al personal de Alke Wallet que lo registre
             para poder ver tus cuentas y tus movimientos.
-        </p>
+        </div>
     {% else %}
     {# El personal ve los totales de todo el sistema #}
     {% if user.is_staff %}
-        <p>Resumen de lo que hay registrado en el sistema:</p>
-        <ul>
-            {# Los valores vienen del contexto que arma InicioView; cada total enlaza a su listado #}
-            <li><a href="{% url 'gestion:cliente_lista' %}">Clientes</a>: {{ total_clientes }}</li>
-            <li><a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>: {{ total_cuentas }}</li>
-            <li><a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>: {{ total_transacciones }}</li>
-        </ul>
-    {# Un cliente ve solo sus cuentas con su saldo #}
+        {# Los valores vienen del contexto que arma InicioView; cada total enlaza a su listado #}
+        {# col-4 deja los tres totales en una sola fila incluso en celular; por eso cada uno es una tarjeta compacta vertical #}
+        <div class="row g-2 g-md-3 mb-4">
+            <div class="col-4">
+                <a href="{% url 'gestion:cliente_lista' %}" class="text-decoration-none">
+                    <div class="card tarjeta-dato h-100"><div class="card-body d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-md-3 p-3">
+                        <span class="icono-dato mb-2 mb-md-0"><i class="bi bi-people"></i></span>
+                        <div><div class="h2 fw-bold mb-0 text-dark lh-1">{{ total_clientes }}</div><div class="text-muted small mt-1">Clientes</div></div>
+                    </div></div>
+                </a>
+            </div>
+            <div class="col-4">
+                <a href="{% url 'gestion:cuenta_lista' %}" class="text-decoration-none">
+                    <div class="card tarjeta-dato h-100"><div class="card-body d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-md-3 p-3">
+                        <span class="icono-dato mb-2 mb-md-0"><i class="bi bi-credit-card-2-front"></i></span>
+                        <div><div class="h2 fw-bold mb-0 text-dark lh-1">{{ total_cuentas }}</div><div class="text-muted small mt-1">Cuentas</div></div>
+                    </div></div>
+                </a>
+            </div>
+            <div class="col-4">
+                <a href="{% url 'gestion:transaccion_lista' %}" class="text-decoration-none">
+                    <div class="card tarjeta-dato h-100"><div class="card-body d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-md-3 p-3">
+                        <span class="icono-dato mb-2 mb-md-0"><i class="bi bi-arrow-left-right"></i></span>
+                        <div><div class="h2 fw-bold mb-0 text-dark lh-1">{{ total_transacciones }}</div><div class="text-muted small mt-1">Movimientos</div></div>
+                    </div></div>
+                </a>
+            </div>
+        </div>
+    {# Un cliente ve solo sus cuentas con su saldo, como tarjetas #}
     {% else %}
-        <p>Estas son tus cuentas:</p>
-        <ul>
+        <h2 class="h5 fw-semibold mb-3">Tus cuentas</h2>
+        <div class="row g-3 mb-4">
             {% for cuenta in mis_cuentas %}
-                <li><a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">{{ cuenta.numero }}</a>:
-                    {{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }} ({{ cuenta.moneda.codigo }})</li>
+                <div class="col-md-6 col-xl-4">
+                    <a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}" class="text-decoration-none">
+                        <div class="tarjeta-cuenta p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="opacity-75 small"><i class="bi bi-wallet2 me-1"></i>Cuenta {{ cuenta.numero }}</span>
+                                <span class="badge text-bg-light text-dark">{{ cuenta.moneda.codigo }}</span>
+                            </div>
+                            <div class="saldo">{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</div>
+                            <div class="small opacity-75 mt-1">Saldo disponible</div>
+                        </div>
+                    </a>
+                </div>
             {% empty %}
-                <li>Todavía no tienes cuentas.</li>
+                <div class="col-12"><div class="alert alert-info mb-0">Todavía no tienes cuentas.</div></div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
 
     {# Los 5 movimientos más recientes #}
-    <h3>Últimos movimientos</h3>
-    {% if ultimos_movimientos %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Origen</th>
-                    <th>Destino</th>
-                    <th>Monto</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-clock-history me-2"></i>Últimos movimientos</span>
+            <a href="{% url 'gestion:transaccion_lista' %}" class="small fw-semibold text-decoration-none">Ver todos <i class="bi bi-arrow-right"></i></a>
+        </div>
+        {% if ultimos_movimientos %}
+            {# Celular: lista de filas compactas (d-md-none la oculta desde tablet) #}
+            <div class="d-md-none">
                 {% for movimiento in ultimos_movimientos %}
-                    <tr>
-                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
-                        <td>{{ movimiento.get_tipo_display }}</td>
-                        {# Si no hay cuenta (por ejemplo, el origen de un depósito), muestra un guion #}
-                        <td>{{ movimiento.cuenta_origen.numero|default:"-" }}</td>
-                        <td>{{ movimiento.cuenta_destino.numero|default:"-" }}</td>
-                        {# El símbolo de la moneda sale de la cuenta destino o, si no hay, de la origen #}
-                        <td>{% if movimiento.cuenta_destino %}{{ movimiento.cuenta_destino.moneda.simbolo }}{% else %}{{ movimiento.cuenta_origen.moneda.simbolo }}{% endif %}{{ movimiento.monto }}</td>
-                    </tr>
+                    {% include 'componentes/_movimiento_item.html' with mov=movimiento %}
                 {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Todavía no hay movimientos.</p>
+            </div>
+            {# Tablet y escritorio: tabla completa (d-none la oculta en celular) #}
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in ultimos_movimientos %}
+                            <tr>
+                                <td class="text-nowrap">{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                                <td>{% include 'componentes/_tipo.html' with mov=movimiento %}</td>
+                                {# Si no hay cuenta (por ejemplo, el origen de un depósito), muestra un guion #}
+                                <td>{{ movimiento.cuenta_origen.numero|default:"-" }}</td>
+                                <td>{{ movimiento.cuenta_destino.numero|default:"-" }}</td>
+                                {# El símbolo de la moneda sale de la cuenta destino o, si no hay, de la origen #}
+                                <td class="text-end monto">{% if movimiento.cuenta_destino %}{{ movimiento.cuenta_destino.moneda.simbolo }}{% else %}{{ movimiento.cuenta_origen.moneda.simbolo }}{% endif %}{{ movimiento.monto }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Todavía no hay movimientos.</div>
+        {% endif %}
+    </div>
     {% endif %}
-
-    {# Enlaces rápidos #}
-    <p>
-        <a href="{% url 'gestion:transaccion_lista' %}">Ver todos los movimientos</a>
-        {% if user.is_staff %} · <a href="{% url 'gestion:reporte' %}">Ver el reporte</a>{% endif %}
-    </p>
-    {% endif %} 
 {% endblock %}

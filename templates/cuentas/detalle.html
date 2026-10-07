@@ -6,53 +6,84 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Cuenta {{ cuenta.numero }}</h2>
-    <p>
-        <a href="{% url 'gestion:cuenta_editar' cuenta.pk %}">Editar</a>
-        <a href="{% url 'gestion:cuenta_eliminar' cuenta.pk %}">Eliminar</a>
-        <a href="{% url 'gestion:cuenta_lista' %}">Volver al listado</a>
-    </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Cuenta {{ cuenta.numero }}</h2>
+            <p class="text-muted mb-0">{{ cuenta.cliente.nombre }} · {{ cuenta.moneda.nombre }}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {# Editar y eliminar cuentas es solo del personal #}
+            {% if user.is_staff %}
+                <a href="{% url 'gestion:cuenta_editar' cuenta.pk %}" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Editar</a>
+                <a href="{% url 'gestion:cuenta_eliminar' cuenta.pk %}" class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</a>
+            {% endif %}
+            <a href="{% url 'gestion:cuenta_lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver al listado</a>
+        </div>
+    </div>
 
-    {# Datos de la cuenta #}
-    <ul>
-        <li>Cliente: <a href="{% url 'gestion:cliente_detalle' cuenta.cliente.pk %}">{{ cuenta.cliente.nombre }}</a></li>
-        <li>Moneda: {{ cuenta.moneda.codigo }} ({{ cuenta.moneda.nombre }})</li>
-        {# saldo_calculado lo trae la consulta de la etapa 4 #}
-        <li>Saldo: <strong>{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</strong></li>
-        <li>Estado: {% if cuenta.activa %}Activa{% else %}Inactiva{% endif %}</li>
-        <li>Creada el: {{ cuenta.fecha_creacion|date:"d/m/Y H:i" }}</li>
-    </ul>
+    <div class="row g-4">
+        {# Datos de la cuenta #}
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Saldo</div>
+                    {# saldo_calculado lo trae la consulta de la etapa 4 #}
+                    <div class="saldo-grande mb-3">{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</div>
+                    <dl class="mb-0">
+                        <dt class="text-muted fw-normal small">Cliente</dt>
+                        <dd><a href="{% url 'gestion:cliente_detalle' cuenta.cliente.pk %}" class="text-decoration-none">{{ cuenta.cliente.nombre }}</a></dd>
+                        <dt class="text-muted fw-normal small">Moneda</dt>
+                        <dd>{{ cuenta.moneda.codigo }} ({{ cuenta.moneda.nombre }})</dd>
+                        <dt class="text-muted fw-normal small">Estado</dt>
+                        <dd>{% include 'componentes/_estado.html' %}</dd>
+                        <dt class="text-muted fw-normal small">Creada el</dt>
+                        <dd class="mb-0">{{ cuenta.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
 
-    {# Últimos movimientos de la cuenta #}
-    <h3>Movimientos</h3>
-    {% if movimientos %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Monto</th>
-                    <th>Descripción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for movimiento in movimientos %}
-                    <tr>
-                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
-                        {# get_tipo_display muestra el texto legible del tipo (Depósito, Retiro...) #}
-                        <td>{{ movimiento.get_tipo_display }}</td>
-                        {# Si la cuenta es el destino, el dinero entra (+); si no, sale (-) #}
-                        <td>{% if movimiento.cuenta_destino_id == cuenta.pk %}+{% else %}-{% endif %}{{ movimiento.monto }}</td>
-                        <td>{{ movimiento.descripcion|default:"-" }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {# Avisa si hay más movimientos de los que se muestran #}
-        {% if total_movimientos > 15 %}
-            <p>Se muestran los 15 más recientes de {{ total_movimientos }}.</p>
-        {% endif %}
-    {% else %}
-        <p>Esta cuenta todavía no tiene movimientos.</p>
-    {% endif %}
+        {# Últimos movimientos de la cuenta #}
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-clock-history me-2"></i>Movimientos</div>
+                {% if movimientos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th class="text-end">Monto</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for movimiento in movimientos %}
+                                    <tr>
+                                        <td class="text-nowrap">{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                                        {# Etiqueta de color con el tipo (Depósito, Retiro...) #}
+                                        <td>{% include 'componentes/_tipo.html' with mov=movimiento %}</td>
+                                        {# Si la cuenta es el destino, el dinero entra (+, verde); si no, sale (-, rojo) #}
+                                        {% if movimiento.cuenta_destino_id == cuenta.pk %}
+                                            <td class="text-end monto text-success">+{{ movimiento.monto }}</td>
+                                        {% else %}
+                                            <td class="text-end monto text-danger">-{{ movimiento.monto }}</td>
+                                        {% endif %}
+                                        <td>{{ movimiento.descripcion|default:"-" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {# Avisa si hay más movimientos de los que se muestran #}
+                    {% if total_movimientos > 15 %}
+                        <div class="card-footer bg-transparent small text-muted">Se muestran los 15 más recientes de {{ total_movimientos }}.</div>
+                    {% endif %}
+                {% else %}
+                    <div class="card-body text-muted">Esta cuenta todavía no tiene movimientos.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 {% endblock %}

@@ -8,18 +8,28 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Eliminar cliente</h2>
-    <p>¿Seguro que quieres eliminar a <strong>{{ cliente.nombre }}</strong>?</p>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card border-top border-danger border-4">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Eliminar cliente</h2>
+                    <p class="fs-5">¿Seguro que quieres eliminar a <strong>{{ cliente.nombre }}</strong>?</p>
 
-    {# Avisa qué más se borra junto con el cliente #}
-    <p>También se eliminarán sus {{ cliente.cuentas.count }} cuenta(s) y {{ cliente.fichas_de_agenda.count }} contacto(s) agendado(s).</p>
-    {# Avisa de la protección del historial #}
-    <p>Si alguna de sus cuentas tiene movimientos, no se podrá eliminar.</p>
+                    {# Avisa qué más se borra junto con el cliente #}
+                    <div class="alert alert-warning">
+                        <div>También se eliminarán sus {{ cliente.cuentas.count }} cuenta(s) y {{ cliente.fichas_de_agenda.count }} contacto(s) agendado(s).</div>
+                        {# Avisa de la protección del historial #}
+                        <div class="mt-1">Si alguna de sus cuentas tiene movimientos, no se podrá eliminar.</div>
+                    </div>
 
-    <form method="post">
-        {# Token de seguridad CSRF #}
-        {% csrf_token %}
-        <button type="submit">Sí, eliminar</button>
-        <a href="{% url 'gestion:cliente_detalle' cliente.pk %}">Cancelar</a>
-    </form>
+                    <form method="post" class="d-flex gap-2">
+                        {# Token de seguridad CSRF #}
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Sí, eliminar</button>
+                        <a href="{% url 'gestion:cliente_detalle' cliente.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

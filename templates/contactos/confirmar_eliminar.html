@@ -6,18 +6,25 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Quitar contacto</h2>
-    <p>
-        ¿Seguro que quieres quitar a <strong>{{ contacto.agendado.nombre }}</strong>
-        de la agenda de <strong>{{ contacto.propietario.nombre }}</strong>?
-    </p>
-    {# Aclara qué no se borra #}
-    <p>Solo se quita de la agenda: el cliente y sus cuentas no se eliminan.</p>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card border-top border-danger border-4">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold text-danger"><i class="bi bi-person-dash me-2"></i>Quitar contacto</h2>
+                    <p class="fs-5">
+                        ¿Seguro que quieres quitar a <strong>{{ contacto.agendado.nombre }}</strong>
+                        de la agenda de <strong>{{ contacto.propietario.nombre }}</strong>?
+                    </p>
+                    <div class="alert alert-info">Solo se quita de la agenda: el cliente y sus cuentas no se eliminan.</div>
 
-    <form method="post">
-        {# Token de seguridad CSRF #}
-        {% csrf_token %}
-        <button type="submit">Sí, quitar</button>
-        <a href="{% url 'gestion:cliente_detalle' contacto.propietario.pk %}">Cancelar</a>
-    </form>
+                    <form method="post" class="d-flex gap-2">
+                        {# Token de seguridad CSRF #}
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Sí, quitar</button>
+                        <a href="{% url 'gestion:cliente_detalle' contacto.propietario.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

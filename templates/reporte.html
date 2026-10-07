@@ -6,96 +6,124 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Reporte</h2>
-    <p>Los montos de monedas distintas no se suman entre sí: cada moneda tiene su propia sección.</p>
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Reporte</h2>
+        <p class="text-muted mb-0">Los montos de monedas distintas no se suman entre sí: cada moneda tiene su propia sección.</p>
+    </div>
 
     {# Una sección por moneda #}
     {% for seccion in secciones %}
-        <h3>{{ seccion.moneda.codigo }} · {{ seccion.moneda.nombre }}</h3>
+        <h3 class="h5 fw-semibold mb-3"><span class="badge text-bg-primary me-2">{{ seccion.moneda.codigo }}</span>{{ seccion.moneda.nombre }}</h3>
 
-        {# Cantidad de movimientos y monto total por tipo #}
-        <h4>Movimientos por tipo</h4>
-        {% if seccion.resumen %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Cantidad</th>
-                        <th>Monto total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for fila in seccion.resumen %}
-                        <tr>
-                            <td>{{ fila.tipo_nombre }}</td>
-                            <td>{{ fila.cantidad }}</td>
-                            <td>{{ seccion.moneda.simbolo }}{{ fila.total }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No hay movimientos en esta moneda.</p>
-        {% endif %}
+        <div class="row g-4 mb-4">
+            {# Cantidad de movimientos y monto total por tipo #}
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">Movimientos por tipo</div>
+                    {% if seccion.resumen %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th class="text-end">Cantidad</th>
+                                        <th class="text-end">Monto total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fila in seccion.resumen %}
+                                        <tr>
+                                            <td>{{ fila.tipo_nombre }}</td>
+                                            <td class="text-end">{{ fila.cantidad }}</td>
+                                            <td class="text-end monto">{{ seccion.moneda.simbolo }}{{ fila.total }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="card-body text-muted">No hay movimientos en esta moneda.</div>
+                    {% endif %}
+                </div>
+            </div>
 
-        {# Saldo total de cada cliente, de mayor a menor #}
-        <h4>Saldo por cliente</h4>
-        {% if seccion.saldos %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Saldo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for fila in seccion.saldos %}
-                        <tr>
-                            {# El nombre enlaza a la ficha del cliente #}
-                            <td><a href="{% url 'gestion:cliente_detalle' fila.cliente %}">{{ fila.cliente__nombre }}</a></td>
-                            <td>{{ seccion.moneda.simbolo }}{{ fila.total }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th>Total</th>
-                        <th>{{ seccion.moneda.simbolo }}{{ seccion.total_saldos }}</th>
-                    </tr>
-                </tfoot>
-            </table>
-        {% else %}
-            <p>No hay cuentas en esta moneda.</p>
-        {% endif %}
+            {# Saldo total de cada cliente, de mayor a menor #}
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">Saldo por cliente</div>
+                    {% if seccion.saldos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th class="text-end">Saldo</th>
+                                        <th class="d-none d-sm-table-cell" style="width: 30%">Proporción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fila in seccion.saldos %}
+                                        <tr>
+                                            {# El nombre enlaza a la ficha del cliente #}
+                                            <td><a href="{% url 'gestion:cliente_detalle' fila.cliente %}" class="fw-semibold text-decoration-none">{{ fila.cliente__nombre }}</a></td>
+                                            <td class="text-end monto">{{ seccion.moneda.simbolo }}{{ fila.total }}</td>
+                                            {# widthratio calcula el porcentaje: valor / total * 100; la barra mide esa parte del saldo total #}
+                                            <td class="d-none d-sm-table-cell"><div class="progress barra-prop" role="progressbar"><div class="progress-bar" style="width: {% widthratio fila.total seccion.total_saldos 100 %}%"></div></div></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>Total</th>
+                                        <th class="text-end monto">{{ seccion.moneda.simbolo }}{{ seccion.total_saldos }}</th>
+                                        <th class="d-none d-sm-table-cell"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="card-body text-muted">No hay cuentas en esta moneda.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     {% endfor %}
 
     {# Cantidad de movimientos de cada mes #}
-    <h3>Movimientos por mes</h3>
-    {% if por_mes %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Mes</th>
-                    <th>Cantidad</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fila in por_mes %}
-                    <tr>
-                        {# F Y escribe el nombre del mes y el año, por ejemplo "septiembre 2026" #}
-                        <td>{{ fila.mes|date:"F Y" }}</td>
-                        <td>{{ fila.cantidad }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th>Total</th>
-                    <th>{{ total_movimientos }}</th>
-                </tr>
-            </tfoot>
-        </table>
-    {% else %}
-        <p>Todavía no hay movimientos.</p>
-    {% endif %}
+    <div class="card">
+        <div class="card-header"><i class="bi bi-calendar3 me-2"></i>Movimientos por mes</div>
+        {% if por_mes %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mes</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="d-none d-sm-table-cell" style="width: 40%">Proporción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in por_mes %}
+                            <tr>
+                                {# F Y escribe el nombre del mes y el año, por ejemplo "septiembre 2026" #}
+                                <td class="text-capitalize">{{ fila.mes|date:"F Y" }}</td>
+                                <td class="text-end">{{ fila.cantidad }}</td>
+                                {# La barra mide qué parte del total de movimientos ocurrió ese mes #}
+                                <td class="d-none d-sm-table-cell"><div class="progress barra-prop" role="progressbar"><div class="progress-bar" style="width: {% widthratio fila.cantidad total_movimientos 100 %}%"></div></div></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Total</th>
+                            <th class="text-end">{{ total_movimientos }}</th>
+                            <th class="d-none d-sm-table-cell"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-muted">Todavía no hay movimientos.</div>
+        {% endif %}
+    </div>
 {% endblock %}

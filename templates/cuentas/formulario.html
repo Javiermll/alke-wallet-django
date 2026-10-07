@@ -1,28 +1,37 @@
 {# Hereda el diseño común de base.html #}
 {% extends 'base.html' %}
 
-{# Título de la pestaña: "object" existe al editar y no existe al crear #}
+{# Título de la pestaña del navegador #}
 {% block titulo %}{% if object %}Editar cuenta{% else %}Nueva cuenta{% endif %} · Alke Wallet{% endblock %}
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>{% if object %}Editar cuenta {{ object.numero }}{% else %}Nueva cuenta{% endif %}</h2>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <h2 class="fw-bold mb-3">{% if object %}Editar cuenta {{ object.numero }}{% else %}Nueva cuenta{% endif %}</h2>
 
-    {# Al editar, avisa qué datos no se pueden cambiar #}
-    {% if object %}
-        <p>
-            Cliente: {{ object.cliente.nombre }} · Moneda: {{ object.moneda.codigo }}
-            (estos datos no se pueden cambiar)
-        </p>
-    {% endif %}
+            {# Al editar, el cliente y la moneda se muestran pero no se pueden cambiar #}
+            {% if object %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Cliente: <strong>{{ object.cliente.nombre }}</strong> · Moneda: <strong>{{ object.moneda.codigo }}</strong>
+                    (estos datos no se pueden cambiar)
+                </div>
+            {% endif %}
 
-    {# method="post" envía los datos al guardar; sin action, vuelve a esta misma dirección #}
-    <form method="post">
-        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
-        {% csrf_token %}
-        {# Dibuja todos los campos con su etiqueta y sus mensajes de error #}
-        {{ form.as_p }}
-        <button type="submit">Guardar</button>
-        <a href="{% url 'gestion:cuenta_lista' %}">Cancelar</a>
-    </form>
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {# Token de seguridad CSRF #}
+                        {% csrf_token %}
+                        {% include 'componentes/_campos.html' %}
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+                            <a href="{% url 'gestion:cuenta_lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

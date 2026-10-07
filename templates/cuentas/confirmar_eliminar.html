@@ -6,16 +6,23 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Eliminar cuenta</h2>
-    <p>¿Seguro que quieres eliminar la cuenta <strong>{{ cuenta.numero }}</strong> de {{ cuenta.cliente.nombre }}?</p>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card border-top border-danger border-4">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Eliminar cuenta</h2>
+                    <p class="fs-5">¿Seguro que quieres eliminar la cuenta <strong>{{ cuenta.numero }}</strong> de {{ cuenta.cliente.nombre }}?</p>
 
-    {# Avisa de la protección del historial y ofrece la alternativa #}
-    <p>Si la cuenta tiene movimientos, no se podrá eliminar. En ese caso, puedes desactivarla desde Editar.</p>
+                    <div class="alert alert-warning">Si la cuenta tiene movimientos, no se podrá eliminar. En ese caso, puedes desactivarla desde Editar.</div>
 
-    <form method="post">
-        {# Token de seguridad CSRF #}
-        {% csrf_token %}
-        <button type="submit">Sí, eliminar</button>
-        <a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">Cancelar</a>
-    </form>
+                    <form method="post" class="d-flex gap-2">
+                        {# Token de seguridad CSRF #}
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Sí, eliminar</button>
+                        <a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

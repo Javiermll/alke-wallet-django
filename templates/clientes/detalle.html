@@ -8,96 +8,145 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>{{ cliente.nombre }}</h2>
-    <p>
-        <a href="{% url 'gestion:cliente_editar' cliente.pk %}">Editar</a>
-        <a href="{% url 'gestion:cliente_eliminar' cliente.pk %}">Eliminar</a>
-        <a href="{% url 'gestion:cliente_lista' %}">Volver al listado</a>
-    </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="avatar avatar-lg">{{ cliente.nombre|slice:":1"|upper }}</span>
+            <div>
+                <h2 class="fw-bold mb-0">{{ cliente.nombre }}</h2>
+                <p class="text-muted mb-0">{{ cliente.email }}</p>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'gestion:cliente_editar' cliente.pk %}" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Editar</a>
+            {# Eliminar y el listado de clientes son solo del personal #}
+            {% if user.is_staff %}
+                <a href="{% url 'gestion:cliente_eliminar' cliente.pk %}" class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</a>
+                <a href="{% url 'gestion:cliente_lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver al listado</a>
+            {% endif %}
+        </div>
+    </div>
 
-    {# Datos del cliente #}
-    <ul>
-        <li>Correo electrónico: {{ cliente.email }}</li>
-        <li>Teléfono: {{ cliente.telefono|default:"-" }}</li>
-        <li>Usuario de acceso: {{ cliente.usuario.username }}</li>
-        {# date da formato a la fecha; Django la convierte a la hora de Santiago #}
-        <li>Registrado el: {{ cliente.fecha_registro|date:"d/m/Y H:i" }}</li>
-    </ul>
+    <div class="row g-4">
+        {# Datos del cliente #}
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-person-vcard me-2"></i>Datos</div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt class="text-muted fw-normal small">Correo electrónico</dt>
+                        <dd>{{ cliente.email }}</dd>
+                        <dt class="text-muted fw-normal small">Teléfono</dt>
+                        <dd>{{ cliente.telefono|default:"-" }}</dd>
+                        <dt class="text-muted fw-normal small">Usuario de acceso</dt>
+                        <dd>{{ cliente.usuario.username }}</dd>
+                        {# date da formato a la fecha; Django la convierte a la hora de Santiago #}
+                        <dt class="text-muted fw-normal small">Registrado el</dt>
+                        <dd class="mb-0">{{ cliente.fecha_registro|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
 
-    {# Cuentas del cliente, con el saldo que calculó la vista #}
-    <h3>Cuentas</h3>
-    {# Enlace al formulario de cuenta nueva, con este cliente ya elegido #}
-    <p><a href="{% url 'gestion:cuenta_nueva' %}?cliente={{ cliente.pk }}">Nueva cuenta para este cliente</a></p>
-    {% if cuentas %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Número</th>
-                    <th>Moneda</th>
-                    <th>Saldo</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cuenta in cuentas %}
-                    <tr>
-                        {# El número es un enlace a la ficha de la cuenta #}
-                        <td><a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}">{{ cuenta.numero }}</a></td>
-                        <td>{{ cuenta.moneda.codigo }}</td>
-                        <td>{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</td>
-                        {# Muestra Activa o Inactiva según el campo activa #}
-                        <td>{% if cuenta.activa %}Activa{% else %}Inactiva{% endif %}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Este cliente todavía no tiene cuentas.</p>
-    {% endif %}
+        {# Cuentas del cliente, con el saldo que calculó la vista #}
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-credit-card-2-front me-2"></i>Cuentas</span>
+                    {# Enlace al formulario de cuenta nueva, con este cliente ya elegido #}
+                    {% if user.is_staff %}<a href="{% url 'gestion:cuenta_nueva' %}?cliente={{ cliente.pk }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Nueva cuenta</a>{% endif %}
+                </div>
+                {% if cuentas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Moneda</th>
+                                    <th class="text-end">Saldo</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cuenta in cuentas %}
+                                    <tr>
+                                        {# El número es un enlace a la ficha de la cuenta #}
+                                        <td><a href="{% url 'gestion:cuenta_detalle' cuenta.pk %}" class="fw-semibold text-decoration-none">{{ cuenta.numero }}</a></td>
+                                        <td>{{ cuenta.moneda.codigo }}</td>
+                                        <td class="text-end monto">{{ cuenta.moneda.simbolo }}{{ cuenta.saldo_calculado }}</td>
+                                        {# Muestra Activa o Inactiva según el campo activa #}
+                                        <td>{% include 'componentes/_estado.html' %}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="card-body text-muted">Este cliente todavía no tiene cuentas.</div>
+                {% endif %}
+            </div>
+        </div>
 
-    {# Contactos que el cliente tiene agendados #}
-    <h3>Contactos</h3>
-    {# Enlace al formulario para agendar un contacto nuevo #}
-    <p><a href="{% url 'gestion:contacto_nuevo' cliente.pk %}">Agregar contacto</a></p>
-    {% if contactos %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Apodo</th>
-                    <th>Nombre</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contacto in contactos %}
-                    <tr>
-                        <td>{{ contacto.apodo|default:"-" }}</td>
-                        {# El nombre es un enlace a la ficha del cliente agendado #}
-                        <td><a href="{% url 'gestion:cliente_detalle' contacto.agendado.pk %}">{{ contacto.agendado.nombre }}</a></td>
-                        <td>
-                            {# Atajo: abre el formulario de movimiento con una transferencia a este contacto ya elegida #}
-                            {% if contacto.cuenta_sugerida %}
-                                <a href="{% url 'gestion:transaccion_nueva' %}?tipo=transferencia&cuenta_destino={{ contacto.cuenta_sugerida.pk }}">Transferir</a>
-                            {% endif %}
-                            <a href="{% url 'gestion:contacto_eliminar' contacto.pk %}">Quitar</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Este cliente no tiene contactos agendados.</p>
-    {% endif %}
+        {# Contactos que el cliente tiene agendados #}
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-journal-bookmark me-2"></i>Contactos</span>
+                    {# Enlace al formulario para agendar un contacto nuevo #}
+                    <a href="{% url 'gestion:contacto_nuevo' cliente.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-person-plus me-1"></i>Agregar contacto</a>
+                </div>
+                {% if contactos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Apodo</th>
+                                    <th>Nombre</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contacto in contactos %}
+                                    <tr>
+                                        <td>{{ contacto.apodo|default:"-" }}</td>
+                                        {# El nombre es un enlace a la ficha del cliente agendado #}
+                                        <td><a href="{% url 'gestion:cliente_detalle' contacto.agendado.pk %}" class="fw-semibold text-decoration-none">{{ contacto.agendado.nombre }}</a></td>
+                                        <td class="text-end text-nowrap">
+                                            {# Atajo: abre el formulario de movimiento con una transferencia a este contacto ya elegida #}
+                                            {% if contacto.cuenta_sugerida %}
+                                                <a href="{% url 'gestion:transaccion_nueva' %}?tipo=transferencia&cuenta_destino={{ contacto.cuenta_sugerida.pk }}" class="btn btn-sm btn-primary"><i class="bi bi-send me-1"></i>Transferir</a>
+                                            {% endif %}
+                                            <a href="{% url 'gestion:contacto_eliminar' contacto.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-person-dash me-1"></i>Quitar</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="card-body text-muted">Este cliente no tiene contactos agendados.</div>
+                {% endif %}
+            </div>
+        </div>
 
-    {# Agendas de otros clientes en las que aparece este cliente (relación inversa agendado_por) #}
-    <h3>Aparece en la agenda de</h3>
-    {% if cliente.agendado_por.all %}
-        <ul>
-            {% for otro in cliente.agendado_por.all %}
-                <li><a href="{% url 'gestion:cliente_detalle' otro.pk %}">{{ otro.nombre }}</a></li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Ningún cliente lo tiene agendado.</p>
-    {% endif %}
+        {# Agendas de otros clientes en las que aparece este cliente (relación inversa agendado_por) #}
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-people me-2"></i>Aparece en la agenda de</div>
+                <div class="card-body">
+                    {% if cliente.agendado_por.all %}
+                        <ul class="list-unstyled mb-0">
+                            {% for otro in cliente.agendado_por.all %}
+                                <li class="mb-2 d-flex align-items-center gap-2">
+                                    <span class="avatar">{{ otro.nombre|slice:":1"|upper }}</span>
+                                    <a href="{% url 'gestion:cliente_detalle' otro.pk %}" class="text-decoration-none">{{ otro.nombre }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <span class="text-muted">Ningún cliente lo tiene agendado.</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
