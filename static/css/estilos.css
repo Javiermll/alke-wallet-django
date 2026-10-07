@@ -1,316 +1,680 @@
 /* ============================================================
-   Alke Wallet: estilos generales de todas las pantallas
+   Alke Wallet: ajustes visuales sobre Bootstrap 5
+   Bootstrap pone la estructura; este archivo pone la marca.
    ============================================================ */
 
-/* Variables: colores y medidas que se definen una vez y se usan en todo el archivo */
+/* Variables: la paleta de la marca; Bootstrap las usa en botones, enlaces y avisos */
 :root {
-    --color-principal: #1d4e89;
-    --color-principal-oscuro: #153a68;
-    --color-fondo: #eef2f7;
-    --color-texto: #1f2933;
-    --color-gris: #667085;
-    --color-borde: #d5dbe3;
-    --color-fila: #f6f8fb;
-    --color-exito: #2f9e5a;
-    --color-exito-fondo: #e1f5e8;
-    --color-error: #c0392b;
-    --color-error-fondo: #fde8e6;
-    --color-aviso: #d9a400;
-    --color-aviso-fondo: #fff6d9;
-    --color-info-fondo: #e6eefa;
-    --radio: 6px;
+    --alke-azul: #1d4e89;
+    --alke-azul-oscuro: #0f2f57;
+    --alke-azul-claro: #2f6db5;
+    --alke-turquesa: #17b8a6;
+    --alke-fondo: #f3f6fb;
+
+    --bs-primary: #1d4e89;
+    --bs-primary-rgb: 29, 78, 137;
+    --bs-link-color: #1d4e89;
+    --bs-link-color-rgb: 29, 78, 137;
+    --bs-link-hover-color: #0f2f57;
+    --bs-link-hover-color-rgb: 15, 47, 87;
+    --bs-body-font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --bs-body-bg: var(--alke-fondo);
+    --bs-body-color: #1f2933;
+    --bs-border-radius: 0.6rem;
+    --bs-border-radius-lg: 1rem;
 }
 
-/* El fondo de toda la página es un gris azulado suave */
-html {
-    background: var(--color-fondo);
+/* Los títulos usan el azul oscuro de la marca */
+h1, h2, h3, h4, h5 {
+    color: var(--bs-heading-color);
+    letter-spacing: -0.01em;
 }
 
-/* El contenido va en una tarjeta blanca centrada, de ancho máximo 960px */
-body {
-    max-width: 960px;
-    margin: 1.5rem auto;
-    padding: 1.5rem;
-    background: #ffffff;
-    color: var(--color-texto);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    line-height: 1.5;
-    border-radius: var(--radio);
-    box-shadow: 0 1px 4px rgba(16, 24, 40, 0.12);
+/* Color de los títulos: azul oscuro de la marca, y blanco dentro de las secciones con fondo oscuro */
+:root {
+    --bs-heading-color: var(--alke-azul-oscuro);
 }
 
-/* Encabezado: la marca arriba y el menú debajo */
-header {
-    margin-bottom: 0.5rem;
+.portada,
+.banner-inicio,
+.banda-final,
+.acceso-lateral {
+    --bs-heading-color: #ffffff;
 }
 
-/* La marca junta el logo y el nombre en una fila */
-.marca {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+/* La tarjeta blanca de acceso está dentro de la portada: sus títulos vuelven al azul oscuro */
+.tarjeta-acceso {
+    --bs-heading-color: var(--alke-azul-oscuro);
 }
 
-/* Tamaño del logo */
-.marca img {
-    width: 40px;
-    height: 40px;
+/* Pone en mayúscula solo la primera letra del texto (para la fecha, que Django escribe en minúsculas) */
+.primera-mayuscula::first-letter {
+    text-transform: uppercase;
 }
 
-/* Títulos */
-h1, h2, h3, h4 {
-    color: var(--color-principal);
-    line-height: 1.25;
+/* Botón principal con el azul de la marca (Bootstrap lo define aparte de las variables de arriba) */
+.btn-primary {
+    --bs-btn-bg: var(--alke-azul);
+    --bs-btn-border-color: var(--alke-azul);
+    --bs-btn-hover-bg: var(--alke-azul-oscuro);
+    --bs-btn-hover-border-color: var(--alke-azul-oscuro);
+    --bs-btn-active-bg: var(--alke-azul-oscuro);
+    --bs-btn-active-border-color: var(--alke-azul-oscuro);
+    --bs-btn-disabled-bg: var(--alke-azul);
+    --bs-btn-disabled-border-color: var(--alke-azul);
 }
 
-/* El título del sitio no lleva margen para quedar alineado con el logo */
-h1 {
-    margin: 0;
-    font-size: 1.6rem;
+.btn-outline-primary {
+    --bs-btn-color: var(--alke-azul);
+    --bs-btn-border-color: var(--alke-azul);
+    --bs-btn-hover-bg: var(--alke-azul);
+    --bs-btn-hover-border-color: var(--alke-azul);
+    --bs-btn-active-bg: var(--alke-azul);
+    --bs-btn-active-border-color: var(--alke-azul);
 }
 
-/* Línea separadora */
-hr {
-    border: none;
-    border-top: 1px solid var(--color-borde);
-    margin: 1rem 0;
+.text-bg-primary {
+    background-color: var(--alke-azul) !important;
 }
 
-/* Enlaces */
-a {
-    color: var(--color-principal);
+/* ---------- Menú superior ---------- */
+
+/* Barra con degradado azul y una línea turquesa abajo */
+.barra-alke {
+    background: linear-gradient(120deg, var(--alke-azul-oscuro), var(--alke-azul) 70%, var(--alke-azul-claro));
+    border-bottom: 3px solid var(--alke-turquesa);
+    box-shadow: 0 4px 14px rgba(15, 47, 87, 0.25);
 }
 
-a:hover {
-    color: var(--color-principal-oscuro);
+/* Enlaces del menú: suaves, y el activo con fondo translúcido */
+.barra-alke .nav-link {
+    margin: 0 0.1rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.5rem;
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
 }
 
-/* ---------- Menú ---------- */
-
-/* Los enlaces del menú van en una fila que baja de línea si falta espacio */
-nav {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.75rem;
-}
-
-/* Cada enlace del menú parece un botón plano */
-nav a {
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--radio);
-    text-decoration: none;
-}
-
-/* Al pasar el ratón, el enlace se resalta */
-nav a:hover {
-    background: var(--color-info-fondo);
-}
-
-/* El texto de la sesión se empuja hacia la derecha */
-nav .sesion {
-    margin-left: auto;
-    padding-right: 0.5rem;
-    color: var(--color-gris);
-}
-
-/* El formulario de cerrar sesión queda en la misma fila del menú */
-nav form {
-    display: inline;
-}
-
-/* ---------- Botones ---------- */
-
-/* Aspecto general de los botones */
-button {
-    padding: 0.45rem 1rem;
-    border: none;
-    border-radius: var(--radio);
-    background: var(--color-principal);
+.barra-alke .nav-link:hover {
     color: #ffffff;
-    font-size: 1rem;
-    cursor: pointer;
+    background: rgba(255, 255, 255, 0.12);
 }
 
-button:hover {
-    background: var(--color-principal-oscuro);
+.barra-alke .nav-link.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
 }
 
-/* El botón de cerrar sesión es más discreto: solo borde */
-nav button {
-    padding: 0.3rem 0.8rem;
+/* Botón de la sesión (usuario y rol) */
+.btn-sesion {
+    --bs-btn-color: #ffffff;
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-active-color: #ffffff;
+    --bs-btn-border-color: rgba(255, 255, 255, 0.35);
+    --bs-btn-hover-bg: rgba(255, 255, 255, 0.12);
+    --bs-btn-hover-border-color: rgba(255, 255, 255, 0.6);
+    --bs-btn-active-bg: rgba(255, 255, 255, 0.18);
+    --bs-btn-active-border-color: rgba(255, 255, 255, 0.6);
+    padding: 0.3rem 0.75rem;
+}
+
+.sesion-rol {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* Círculo con la inicial del usuario */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--alke-turquesa);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Avatar grande de las fichas */
+.avatar-lg {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, var(--alke-azul), var(--alke-turquesa));
+}
+
+/* ---------- Tarjetas ---------- */
+
+/* Las tarjetas son blancas, sin borde y con una sombra suave */
+.card {
+    --bs-card-bg: #ffffff;
+    border: 0;
+    border-radius: var(--bs-border-radius-lg);
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.07);
+}
+
+.card-header {
+    padding: 0.9rem 1.25rem;
     background: transparent;
-    color: var(--color-principal);
-    border: 1px solid var(--color-principal);
+    border-bottom: 1px solid #e8edf4;
+    font-weight: 600;
+    color: var(--alke-azul-oscuro);
 }
 
-nav button:hover {
-    background: var(--color-info-fondo);
+/* Tarjeta de un dato del resumen (clientes, cuentas, transacciones) */
+.tarjeta-dato {
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.tarjeta-dato:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.12);
+}
+
+.icono-dato {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.8rem;
+    font-size: 1.4rem;
+    background: rgba(29, 78, 137, 0.1);
+    color: var(--alke-azul);
+}
+
+/* Tarjeta de una cuenta, con aspecto de tarjeta bancaria */
+.tarjeta-cuenta {
+    color: #ffffff;
+    border-radius: var(--bs-border-radius-lg);
+    background: linear-gradient(135deg, var(--alke-azul-oscuro), var(--alke-azul) 55%, var(--alke-turquesa));
+    box-shadow: 0 8px 22px rgba(29, 78, 137, 0.3);
+    transition: transform 0.15s;
+}
+
+.tarjeta-cuenta:hover {
+    transform: translateY(-3px);
+}
+
+.tarjeta-cuenta .saldo {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Saldo grande en la ficha de una cuenta */
+.saldo-grande {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--alke-azul);
+    letter-spacing: -0.02em;
 }
 
 /* ---------- Tablas ---------- */
 
-/* Las tablas ocupan todo el ancho y comparten bordes */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0.75rem 0 1.25rem;
+/* Las tablas son transparentes: toman el blanco de su tarjeta, no el gris del fondo */
+.table {
+    --bs-table-bg: transparent;
 }
 
-/* Celdas */
-th, td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--color-borde);
-    text-align: left;
+/* Encabezado claro y en mayúsculas pequeñas */
+.table > thead > tr > th {
+    background: #f6f9fd;
+    color: #667085;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid #e8edf4;
 }
 
-/* Encabezado de la tabla */
-thead th {
-    background: var(--color-principal);
-    color: #ffffff;
-    border-bottom: none;
+.table > :not(caption) > * > * {
+    padding: 0.85rem 1rem;
 }
 
-/* Filas alternadas para leer mejor */
-tbody tr:nth-child(even) {
-    background: var(--color-fila);
+.table-hover > tbody > tr:hover > * {
+    --bs-table-bg-state: #f3f8ff;
 }
 
-/* La fila bajo el ratón se resalta */
-tbody tr:hover {
-    background: var(--color-info-fondo);
+/* Fila de totales */
+.table > tfoot > tr > th {
+    background: #f6f9fd;
+    border-top: 2px solid var(--alke-azul);
 }
 
-/* Fila de totales al pie de una tabla */
-tfoot th {
-    background: var(--color-fila);
-    color: var(--color-texto);
-    border-top: 2px solid var(--color-principal);
+/* Montos con cifras del mismo ancho y sin saltos de línea */
+.monto {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 /* ---------- Formularios ---------- */
 
-/* Separación entre un campo y el siguiente */
-form p {
-    margin: 0 0 1rem;
+.form-control, .form-select {
+    padding: 0.6rem 0.85rem;
+    border-color: #d5dbe3;
 }
 
-/* Las etiquetas van sobre cada campo */
-form label {
-    display: block;
-    margin-bottom: 0.25rem;
-    font-weight: 600;
+.form-control:focus, .form-select:focus {
+    border-color: var(--alke-azul-claro);
+    box-shadow: 0 0 0 0.25rem rgba(29, 78, 137, 0.15);
 }
 
-/* Campos de texto y listas desplegables */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="date"],
-select,
-textarea {
-    width: 100%;
-    max-width: 26rem;
-    padding: 0.45rem 0.6rem;
-    border: 1px solid var(--color-borde);
-    border-radius: var(--radio);
-    font-size: 1rem;
+.form-check-input:checked {
+    background-color: var(--alke-azul);
+    border-color: var(--alke-azul);
 }
 
-/* Al escribir en un campo, se resalta con el color principal */
-input:focus,
-select:focus,
-textarea:focus {
-    outline: 2px solid var(--color-principal);
-    outline-offset: 1px;
+/* ---------- Pantallas de acceso (login y registro) ---------- */
+
+/* Panel lateral con degradado de la tarjeta de acceso */
+.acceso-lateral {
+    background: linear-gradient(150deg, var(--alke-azul-oscuro), var(--alke-azul) 60%, var(--alke-turquesa));
+    color: #ffffff;
 }
 
-/* Texto de ayuda bajo un campo */
-.helptext {
-    display: block;
-    margin-top: 0.25rem;
-    color: var(--color-gris);
-    font-size: 0.875rem;
-}
-
-/* Mensajes de error de los formularios */
-.errorlist {
-    margin: 0 0 0.5rem;
-    padding: 0.5rem 0.75rem;
-    list-style: none;
-    color: var(--color-error);
-    background: var(--color-error-fondo);
-    border-radius: var(--radio);
-    font-size: 0.9rem;
-}
-
-/* ---------- Avisos de las vistas (mensajes de éxito y de error) ---------- */
-
-/* Lista de avisos sin viñetas */
-.mensajes {
-    margin: 0 0 1rem;
-    padding: 0;
-    list-style: none;
-}
-
-/* Aspecto base de cada aviso: franja de color a la izquierda */
-.mensajes li {
-    margin-bottom: 0.5rem;
-    padding: 0.7rem 1rem;
-    border-left: 4px solid var(--color-gris);
-    border-radius: var(--radio);
-    background: var(--color-info-fondo);
-}
-
-/* Un color por tipo de aviso */
-.mensajes .success {
-    border-left-color: var(--color-exito);
-    background: var(--color-exito-fondo);
-}
-
-.mensajes .error {
-    border-left-color: var(--color-error);
-    background: var(--color-error-fondo);
-}
-
-.mensajes .warning {
-    border-left-color: var(--color-aviso);
-    background: var(--color-aviso-fondo);
-}
-
-/* Aviso destacado dentro de una página (por ejemplo, un usuario sin cliente asociado) */
-.aviso {
-    margin: 0 0 1rem;
-    padding: 0.7rem 1rem;
-    border-left: 4px solid var(--color-aviso);
-    border-radius: var(--radio);
-    background: var(--color-aviso-fondo);
+.acceso-lateral h2 {
+    color: #ffffff;
 }
 
 /* ---------- Pie de página ---------- */
 
-footer {
-    color: var(--color-gris);
+/* Pie oscuro con el mismo degradado azul del menú */
+.pie {
+    background: linear-gradient(160deg, var(--alke-azul-oscuro), #0b2344);
+    border-top: 3px solid var(--alke-turquesa);
+    color: rgba(255, 255, 255, 0.7);
 }
 
-/* ---------- Pantallas pequeñas (celulares) ---------- */
+.pie-texto {
+    color: rgba(255, 255, 255, 0.7);
+}
 
-/* En pantallas angostas, la tarjeta ocupa todo el ancho y las tablas se pueden desplazar */
-@media (max-width: 640px) {
-    body {
-        margin: 0;
-        border-radius: 0;
-        padding: 1rem;
+.pie-titulo {
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.pie-enlaces li {
+    margin-bottom: 0.5rem;
+}
+
+.pie-enlaces a,
+.pie-enlace-github {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.pie-enlaces a:hover,
+.pie-enlace-github:hover {
+    color: var(--alke-turquesa);
+}
+
+/* Etiquetas redondeadas del pie */
+.pie-chip {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 0.75rem;
+}
+
+/* Franja inferior con los derechos */
+.pie-base {
+    background: rgba(0, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- Títulos de página ---------- */
+
+/* Los títulos principales llevan una barra de color debajo */
+main h2.fw-bold:not(.text-danger)::after {
+    content: "";
+    display: block;
+    width: 3rem;
+    height: 4px;
+    margin-top: 0.5rem;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--alke-azul), var(--alke-turquesa));
+}
+
+/* En títulos centrados, la barra también va centrada */
+.text-center h2.fw-bold::after {
+    margin-inline: auto;
+}
+
+/* ---------- Portada (login y registro) ---------- */
+
+/* Fondo con degradado y círculos de luz decorativos */
+.portada {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 85% 10%, rgba(23, 184, 166, 0.45), transparent 40%),
+        radial-gradient(circle at 5% 90%, rgba(47, 109, 181, 0.6), transparent 45%),
+        linear-gradient(135deg, var(--alke-azul-oscuro), var(--alke-azul));
+}
+
+.portada-etiqueta {
+    padding: 0.5rem 0.9rem;
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: 500;
+}
+
+/* Palabra destacada del titular */
+.portada-acento {
+    color: #5eead4;
+}
+
+/* Cada ventaja de la portada: ícono y texto en una caja translúcida */
+.portada-dato {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    height: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 0.85rem;
+    line-height: 1.25;
+}
+
+.portada-dato i {
+    font-size: 1.4rem;
+    color: #5eead4;
+}
+
+/* Tarjeta bancaria decorativa */
+.tarjeta-demo {
+    max-width: 22rem;
+    padding: 1.4rem;
+    border-radius: 1.2rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06));
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+    transform: rotate(-3deg);
+}
+
+.tarjeta-demo-numero {
+    margin: 1.6rem 0 1.2rem;
+    font-size: 1.15rem;
+    letter-spacing: 0.15em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Tarjeta blanca donde van los formularios de acceso */
+.tarjeta-acceso {
+    max-width: 30rem;
+    margin-inline: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* Pestañas Iniciar sesión / Crear cuenta */
+.pestanas-acceso {
+    padding: 0.3rem;
+    border-radius: 0.8rem;
+    background: #eef2f7;
+}
+
+.pestanas-acceso .nav-link {
+    color: #667085;
+    font-weight: 600;
+    border-radius: 0.6rem;
+}
+
+.pestanas-acceso .nav-link.active {
+    background: #ffffff;
+    color: var(--alke-azul);
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.12);
+}
+
+/* Círculo numerado de "Empieza en tres pasos" */
+.paso-numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--alke-azul), var(--alke-turquesa));
+    color: #ffffff;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* Banda final con llamado a la acción */
+.banda-final {
+    border-radius: 1.5rem;
+    background:
+        radial-gradient(circle at 90% 0%, rgba(23, 184, 166, 0.5), transparent 45%),
+        linear-gradient(135deg, var(--alke-azul-oscuro), var(--alke-azul));
+}
+
+/* ---------- Inicio del panel ---------- */
+
+/* Banner de bienvenida con degradado */
+.banner-inicio {
+    padding: 1.75rem;
+    border-radius: var(--bs-border-radius-lg);
+    background:
+        radial-gradient(circle at 95% 0%, rgba(23, 184, 166, 0.5), transparent 45%),
+        linear-gradient(135deg, var(--alke-azul-oscuro), var(--alke-azul) 70%, var(--alke-azul-claro));
+    box-shadow: 0 10px 28px rgba(29, 78, 137, 0.28);
+}
+
+/* ---------- Lista de movimientos para celular ---------- */
+
+.movimiento-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid #eef2f7;
+    transition: background 0.15s;
+}
+
+.movimiento-item:last-child {
+    border-bottom: 0;
+}
+
+.movimiento-item:hover {
+    background: #f3f8ff;
+}
+
+/* Círculo con el ícono del tipo de movimiento */
+.movimiento-icono {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    font-size: 1.1rem;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
+/* ---------- Paginación ---------- */
+
+/* Botón anterior, estado y botón siguiente en una sola fila */
+.paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.paginacion-estado {
+    padding: 0.45rem 1rem;
+    border-radius: 2rem;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(16, 24, 40, 0.1);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+/* ---------- Menú de sesión ---------- */
+
+/* En celular el desplegable se abre dentro del menú, ocupando todo el ancho, y no flota fuera de la pantalla */
+@media (max-width: 991.98px) {
+    .barra-alke .nav-item.dropdown {
+        margin-top: 0.5rem;
     }
 
-    table {
-        display: block;
-        overflow-x: auto;
+    .barra-alke .menu-sesion {
+        margin-top: 0.5rem;
+        background: rgba(255, 255, 255, 0.97);
+    }
+}
+
+/* ---------- Pantallas pequeñas ---------- */
+
+@media (max-width: 575.98px) {
+    /* Celdas más compactas para que las tablas quepan en el ancho de un celular */
+    .table > :not(caption) > * > * {
+        padding: 0.65rem 0.5rem;
+        font-size: 0.9rem;
     }
 
-    nav .sesion {
-        margin-left: 0;
+    .tarjeta-cuenta .saldo,
+    .saldo-grande {
+        font-size: 1.6rem;
     }
+}
+
+/* ---------- Detalles finos ---------- */
+
+/* Barras de proporción del reporte */
+.barra-prop {
+    height: 0.6rem;
+    border-radius: 1rem;
+    background: #e8edf4;
+}
+
+.barra-prop .progress-bar {
+    border-radius: 1rem;
+    background: linear-gradient(90deg, var(--alke-azul), var(--alke-turquesa));
+}
+
+/* Entrada suave: las tarjetas y los banners aparecen subiendo un poco */
+@keyframes aparecer {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+main .card,
+.banner-inicio,
+.portada .tarjeta-acceso {
+    animation: aparecer 0.45s ease-out both;
+}
+
+/* La tarjeta decorativa tiene su propia entrada: conserva la inclinación (la animación común la anularía) */
+@keyframes aparecer-inclinada {
+    from { opacity: 0; transform: translateY(14px) rotate(-3deg); }
+    to   { opacity: 1; transform: translateY(0) rotate(-3deg); }
+}
+
+.portada .tarjeta-demo {
+    animation: aparecer-inclinada 0.6s ease-out 0.2s both;
+}
+
+/* Las tarjetas de una misma fila entran una tras otra */
+main .row > div:nth-child(2) > .card,
+main .row > div:nth-child(2) > a > .card {
+    animation-delay: 0.08s;
+}
+
+main .row > div:nth-child(3) > .card,
+main .row > div:nth-child(3) > a > .card {
+    animation-delay: 0.16s;
+}
+
+/* Quien tiene activada la opción de reducir movimiento en su sistema no ve animaciones */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Foco visible y consistente al navegar con teclado */
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid rgba(23, 184, 166, 0.55);
+    outline-offset: 2px;
+}
+
+/* Tarjeta de acceso más ancha, para el formulario de registro */
+.tarjeta-acceso-ancha {
+    max-width: 44rem;
+}
+
+@media (min-width: 992px) {
+    .tarjeta-acceso-ancha {
+        margin-inline: 0;
+    }
+}
+
+/* ---------- Página 404 ---------- */
+
+.error-pagina {
+    position: relative;
+    overflow: hidden;
+    padding: 4rem 1.5rem;
+    border-radius: 1.5rem;
+    background:
+        radial-gradient(circle at 85% 0%, rgba(23, 184, 166, 0.35), transparent 45%),
+        radial-gradient(circle at 0% 100%, rgba(47, 109, 181, 0.4), transparent 50%),
+        linear-gradient(135deg, var(--alke-azul-oscuro), var(--alke-azul));
+    --bs-heading-color: #ffffff;
+}
+
+/* El número 404 grande, con degradado en el texto */
+.error-numero {
+    font-size: clamp(5rem, 22vw, 11rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #ffffff, #5eead4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* La billetera flota suavemente sobre el número */
+@keyframes flotar {
+    0%, 100% { transform: translateY(0) rotate(-6deg); }
+    50% { transform: translateY(-12px) rotate(-6deg); }
+}
+
+.error-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 5rem;
+    height: 5rem;
+    margin-bottom: 1rem;
+    border-radius: 1.4rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 2.4rem;
+    color: #5eead4;
+    animation: flotar 3.5s ease-in-out infinite;
 }
