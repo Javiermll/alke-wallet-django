@@ -1,0 +1,21 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Cambiar contraseña · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Cambiar mi contraseña</h2>
+    <p>Escribe tu contraseña actual y luego la nueva dos veces.</p>
+
+    {# method="post" envía los datos al guardar #}
+    <form method="post">
+        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
+        {% csrf_token %}
+        {# Dibuja los tres campos con su ayuda y sus mensajes de error #}
+        {{ form.as_p }}
+        <button type="submit">Cambiar contraseña</button>
+        <a href="{% url 'gestion:perfil' %}">Cancelar</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,38 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Mi perfil · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Mi perfil</h2>
+
+    {# Datos de acceso: los tiene toda persona con sesión #}
+    <h3>Datos de acceso</h3>
+    <ul>
+        <li>Usuario: <strong>{{ user.get_username }}</strong></li>
+        <li>Rol: {% if user.is_staff %}personal{% elif user.cliente %}cliente{% else %}sin cliente asociado{% endif %}</li>
+        {# date da formato a la fecha; si nunca ha entrado, last_login está vacío #}
+        <li>Último ingreso: {{ user.last_login|date:"d/m/Y H:i"|default:"primer ingreso" }}</li>
+    </ul>
+
+    {# Datos de cliente: solo si la persona tiene un cliente asociado #}
+    {% if user.cliente %}
+        <h3>Datos de cliente</h3>
+        <ul>
+            <li>Nombre: {{ user.cliente.nombre }}</li>
+            <li>Correo: {{ user.cliente.email }}</li>
+            {# Si no hay teléfono (NULL), muestra un texto en su lugar #}
+            <li>Teléfono: {{ user.cliente.telefono|default:"sin registrar" }}</li>
+            <li>Cliente desde: {{ user.cliente.fecha_registro|date:"d/m/Y" }}</li>
+        </ul>
+        <p>
+            <a href="{% url 'gestion:cliente_editar' user.cliente.pk %}">Editar mis datos</a> ·
+            <a href="{% url 'gestion:cliente_detalle' user.cliente.pk %}">Ver mi ficha</a>
+        </p>
+    {% endif %}
+
+    {# Cambiar la contraseña lo puede hacer cualquier persona con sesión #}
+    <p><a href="{% url 'gestion:cambiar_clave' %}">Cambiar mi contraseña</a></p>
+{% endblock %}
