@@ -3,8 +3,12 @@
 
 from django import forms  # forms es el módulo de formularios de Django
 from django.contrib.auth.models import User  # Importa el modelo User para elegir el usuario de login del cliente
+from django.contrib.auth.forms import UserCreationForm# Formulario ya hecho de Django para crear un usuario con contraseña repetida y validada
+from django.db import transaction# atomic agrupa operaciones: o se hacen todas o ninguna
 from .models import Cliente, Contacto, Cuenta, Moneda, Transaccion # Importa los modelos sobre los que se construyen los formularios
+from .servicios import crear_cliente_con_cuenta
 from .alcance import cuentas_de_origen, cuentas_de_destino# Listas de cuentas según quién opera
+
 
 # Textos de las etiquetas, para que aparezcan bien escritos (con tildes)
 ETIQUETAS_CLIENTE = {
@@ -177,3 +181,48 @@ class ContactoForm(forms.ModelForm):
         self.fields['agendado'].queryset = ( # Solo se pueden agendar clientes distintos del dueño y que todavía no estén en su agenda
             Cliente.objects.exclude(pk=propietario.pk).exclude(pk__in=ya_agendados).order_by('nombre')
         )
+
+# ============================================================
+# REGISTRO
+# ============================================================
+
+# Formulario público para que una persona cree su usuario, su ficha de cliente y su primera cuenta
+class RegistroForm(UserCreationForm):
+    nombre = forms.CharField(max_length=100, label='Nombre completo')# Datos del cliente que se piden además del usuario y la contraseña
+    email = forms.EmailField(label='Correo electrónico')
+    telefono = forms.CharField(max_length=20, required=False, label='Teléfono (opcional)')
+    # Moneda de la primera cuenta; la opción vacía obliga a elegir una
+    moneda = forms.ModelChoiceField(
+        queryset=Moneda.objects.order_by('codigo'),
+        empty_label='Selecciona una moneda',
+        label='Moneda de tu primera cuenta',
+    )
+
+    # Configuración del formulario
+    class Meta(UserCreationForm.Meta):
+        fields = ('username',) # Del usuario solo se pide el nombre de usuario; las contraseñas las agrega UserCreationForm
+    field_order = ['username', 'nombre', 'email', 'telefono', 'moneda', 'password1', 'password2']# Orden en que se muestran los campos
+
+    # Revisa que el correo no esté usado por otro cliente
+    def clean_email(self):
+        email = self.cleaned_data['email'].lower()# Correo escrito, en minúsculas para comparar sin importar mayúsculas
+        # Cliente.email es único; se avisa aquí con un mensaje claro en vez de fallar al guardar
+        if Cliente.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('Ya existe un cliente con ese correo.')
+        return email# Devuelve el correo limpio
+
+    # Guarda el usuario, el cliente y la cuenta como una sola operación
+    def save(self, commit=True):
+        # atomic: si algo falla, no queda un usuario suelto sin cliente
+        with transaction.atomic():
+            # Crea el usuario normal (nunca del personal) con su contraseña ya cifrada
+            usuario = super().save()
+            # Crea el cliente y su primera cuenta
+            crear_cliente_con_cuenta(
+                usuario=usuario,
+                nombre=self.cleaned_data['nombre'],
+                email=self.cleaned_data['email'],
+                telefono=self.cleaned_data['telefono'],
+                moneda=self.cleaned_data['moneda'],
+            )
+        return usuario# Devuelve el usuario creado
