@@ -56,7 +56,57 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    /* 3. Cerrar solos los avisos de éxito --------------------------------
+    /* 3. Ventana de espera al iniciar sesión o registrarse ----------------
+       Los formularios con el atributo data-espera muestran una ventana con
+       un indicador de carga. La ventana desaparece sola: al llegar la
+       respuesta del servidor se carga otra página y esta deja de existir.
+       En el plan gratuito de Render la primera respuesta puede tardar casi
+       un minuto, así que el mensaje cambia con el tiempo para explicarlo. */
+    var espera = document.getElementById('espera');
+    if (espera) {
+        var tituloEspera = document.getElementById('esperaTitulo');
+        var textoEspera = document.getElementById('esperaTexto');
+        var botonEspera = document.getElementById('esperaReintentar');
+        var relojes = [];
+
+        var ocultarEspera = function () {
+            espera.hidden = true;
+            document.body.style.overflow = '';
+            relojes.forEach(clearTimeout);
+            relojes = [];
+        };
+
+        document.querySelectorAll('form[data-espera]').forEach(function (formulario) {
+            formulario.addEventListener('submit', function () {
+                tituloEspera.textContent = formulario.dataset.espera;
+                textoEspera.textContent = 'Estamos procesando tu solicitud.';
+                botonEspera.classList.add('d-none');
+                espera.hidden = false;
+                document.body.style.overflow = 'hidden';   // evita que la página de fondo se desplace
+
+                // A los 4 s se explica la demora; a los 20 s se avisa que el servidor estaba dormido; a los 75 s se ofrece reintentar
+                relojes.push(setTimeout(function () {
+                    textoEspera.textContent = 'Esto está tardando un poco más de lo normal. Enseguida terminamos.';
+                }, 4000));
+                relojes.push(setTimeout(function () {
+                    tituloEspera.textContent = 'Despertando el servidor…';
+                    textoEspera.textContent = 'La demo usa un servidor gratuito que se duerme cuando no se usa. La primera vez puede tardar hasta un minuto; luego irá rápido.';
+                }, 20000));
+                relojes.push(setTimeout(function () {
+                    botonEspera.classList.remove('d-none');
+                }, 75000));
+            });
+        });
+
+        botonEspera.addEventListener('click', function () { window.location.reload(); });
+
+        // Si se vuelve con el botón Atrás, la ventana no debe quedar abierta
+        window.addEventListener('pageshow', function (evento) {
+            if (evento.persisted) { ocultarEspera(); }
+        });
+    }
+
+    /* 4. Cerrar solos los avisos de éxito --------------------------------
        Los avisos verdes desaparecen a los 6 segundos; los de error y
        advertencia se quedan hasta que la persona los cierre. */
     document.querySelectorAll('.alert-success.alert-dismissible').forEach(function (aviso) {

@@ -18,7 +18,8 @@
     <h2 class="h4 fw-bold">Crea tu cuenta</h2>
     <p class="text-muted mb-4">Completa tus datos. Al terminar se abre tu primera cuenta, con saldo cero, y entras al sistema.</p>
 
-    <form method="post">
+    {# data-espera: al enviar, app.js muestra la ventana de espera con este título #}
+    <form method="post" data-espera="Creando tu cuenta…">
         {# Token de seguridad CSRF #}
         {% csrf_token %}
         {# dos_columnas=True: los campos se acomodan de dos en dos desde tablet, y en una columna en celular #}

@@ -678,3 +678,45 @@ button:focus-visible {
     color: #5eead4;
     animation: flotar 3.5s ease-in-out infinite;
 }
+
+/* ---------- Ventana de espera (login y registro) ---------- */
+
+/* Capa que cubre la pantalla con el fondo desenfocado; el atributo hidden la oculta */
+.espera-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 47, 87, 0.55);
+    backdrop-filter: blur(6px);
+    animation: aparecer-suave 0.2s ease-out;
+}
+
+.espera-overlay[hidden] {
+    display: none;
+}
+
+@keyframes aparecer-suave {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.espera-tarjeta {
+    width: 100%;
+    max-width: 22rem;
+    padding: 2rem 1.75rem;
+    border-radius: 1.2rem;
+    background: #ffffff;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    --bs-heading-color: var(--alke-azul-oscuro);
+}
+
+.espera-spinner {
+    width: 2.6rem;
+    height: 2.6rem;
+    color: var(--alke-turquesa);
+    border-width: 0.3rem;
+}

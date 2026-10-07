@@ -73,6 +73,21 @@
         </div>
     </section>
 
+    {# ---------- Ventana de espera ---------- #}
+    {# Aparece al enviar el login o el registro (lo activa static/js/app.js en los formularios con data-espera) #}
+    {# y desaparece sola cuando el servidor responde y se carga la página siguiente. #}
+    {# En el plan gratuito de Render el servidor se duerme tras 15 minutos sin visitas y la primera respuesta tarda #}
+    {# cerca de un minuto; este aviso explica la demora para que no parezca que la página falló. #}
+    <div class="espera-overlay" id="espera" role="alertdialog" aria-modal="true" aria-live="polite" aria-labelledby="esperaTitulo" hidden>
+        <div class="espera-tarjeta text-center">
+            <div class="spinner-border espera-spinner mb-3" aria-hidden="true"></div>
+            <h2 class="h5 fw-bold mb-1" id="esperaTitulo">Un momento…</h2>
+            <p class="text-muted small mb-0" id="esperaTexto">Estamos procesando tu solicitud.</p>
+            {# Aparece solo si la espera es muy larga #}
+            <button type="button" class="btn btn-outline-primary btn-sm mt-3 d-none" id="esperaReintentar"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</button>
+        </div>
+    </div>
+
     {# ---------- Características ---------- #}
     <section class="py-5">
         <div class="container py-3">
