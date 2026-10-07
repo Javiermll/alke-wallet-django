@@ -4,7 +4,7 @@ Billetera digital desarrollada con Django para el proyecto final del **Módulo 7
 
 Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, retiros y transferencias, guardar contactos frecuentes, consultar saldos y generar reportes. Usa el ORM de Django, migraciones y las aplicaciones preinstaladas del framework, y funciona con SQLite en desarrollo y PostgreSQL en producción.
 
-![Inicio de Alke Wallet](docs/capturas/104_inicio_con_estilos.png)
+![Portada de Alke Wallet](docs/vista_previa/escritorio_portada.png)
 
 **Contenido:** [Funciones](#funciones) · [Requisitos del proyecto](#requisitos-del-proyecto-y-dónde-están) · [Tecnologías](#tecnologías) · [Instalación](#instalación-y-ejecución-local) · [Pruebas](#pruebas) · [Arquitectura](#arquitectura) · [Modelo de datos](#modelo-de-datos) · [Documentación por etapa](#documentación-por-etapa) · [Autor](#autor)
 
@@ -17,7 +17,10 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 - **Roles y seguridad:** todo es privado salvo el login y el registro. El personal administra todo; cada cliente ve y toca solo lo suyo. Los formularios exigen token CSRF.
 - **Registro y perfil:** una persona crea su usuario, su ficha y su primera cuenta, y puede cambiar su contraseña.
 - **Panel de administración** de Django con columnas, búsqueda y filtros.
-- **239 pruebas automatizadas** y un informe de pruebas.
+- **Interfaz moderna y adaptable:** Bootstrap 5, portada de presentación con el inicio de sesión y el registro en la misma pantalla, y diseño pensado para escritorio, tablet y celular.
+- **Páginas de error propias** (403, 404 y 500) y una **ventana de espera** al iniciar sesión o registrarse, que explica la demora cuando el servidor gratuito estaba dormido.
+- **Preparada para publicarse en Render** con PostgreSQL en Neon (configuración por variables de entorno, archivos estáticos con WhiteNoise, HTTPS y script de construcción). El despliegue está en curso.
+- **244 pruebas automatizadas** y un informe de pruebas.
 
 ## Requisitos del proyecto y dónde están
 
@@ -31,6 +34,8 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 | SQLite en desarrollo y PostgreSQL en producción | [Etapa 1](#etapa-1-conexión-a-la-base-de-datos) y [Etapa 3](#etapa-3-migraciones) |
 | Ramas de Git por funcionalidad | [Flujo de Git](#flujo-de-git) |
 | Pruebas e informe de pruebas | [Pruebas](#pruebas) y [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx) |
+| Diseño responsive con Bootstrap | [Etapa 9](#etapa-9-mejora-visual-con-bootstrap) |
+| Preparación para publicar en Render y Neon | [Etapa 10](#etapa-10-preparación-para-el-despliegue-en-render) |
 | README | Este documento |
 
 ## Estado del proyecto
@@ -45,8 +50,10 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 | 5 | Panel de administración | Completada |
 | 6 | Vistas CRUD basadas en clases y templates | Completada |
 | 7 | Autenticación, archivos estáticos, roles, alcance por usuario, registro y perfil | Completada |
-| 8 | Pruebas automatizadas (239 pruebas) e informe de pruebas | Completada |
-| 9 | Revisión final, README final y publicación | En curso |
+| 8 | Pruebas automatizadas (239 pruebas en esa etapa; hoy son 244) e informe de pruebas | Completada |
+| 9 | Mejora visual con Bootstrap: portada, diseño responsive, componentes y páginas de error | Completada |
+| 10 | Preparación para el despliegue en Render y Neon | En curso (código y base de datos listos; falta crear el servicio) |
+| 11 | Revisión final, README final y publicación | Pendiente |
 
 ## Tecnologías
 
@@ -54,10 +61,18 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 |---|---|---|
 | Python | 3.14.6 | Lenguaje base |
 | Django | 6.1.1 | Framework web |
-| psycopg | 3.3.6 | Adaptador entre Django y PostgreSQL (reemplaza a `psycopg2-binary`; ver incidencia de la etapa 4) |
+| psycopg (`psycopg[binary]`) | 3.3.6 | Adaptador entre Django y PostgreSQL (reemplaza a `psycopg2-binary`; ver incidencia de la etapa 4). La variante `[binary]` evita compilarlo al desplegar |
 | python-dotenv | 1.2.3 | Lectura de credenciales desde el archivo `.env` |
 | PostgreSQL | 17 | Base de datos de producción |
 | SQLite | incluido en Python | Base de datos de desarrollo |
+| Bootstrap | 5.3.3 (CDN) | Sistema de diseño de la interfaz: rejilla, tarjetas, tablas, formularios y menú |
+| Bootstrap Icons | 1.11.3 (CDN) | Íconos de la interfaz |
+| Inter (Google Fonts) | - | Tipografía |
+| gunicorn | 26.2.0 | Servidor que ejecuta la aplicación en producción (solo en Linux; no corre en Windows) |
+| WhiteNoise | 6.12.0 | Sirve los archivos estáticos desde la propia aplicación |
+| dj-database-url | 3.1.2 | Convierte la variable `DATABASE_URL` en la configuración de base de datos de Django |
+| Render | plan gratuito | Alojamiento de la aplicación (despliegue en curso) |
+| Neon | plan gratuito | PostgreSQL en la nube para producción |
 | Visual Studio Code | última versión | Editor |
 | Git y GitHub | - | Control de versiones |
 
@@ -120,6 +135,8 @@ CLAVE_DEMO=
 
 Para usar PostgreSQL, crear antes la base de datos vacía (`CREATE DATABASE alke_wallet;`) y cambiar `DB_ENGINE=postgres`.
 
+En producción (Render) no se usa este archivo: las variables `DEBUG`, `SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `DATABASE_URL` y `DJANGO_SUPERUSER_*` se cargan en el panel del servicio. Están descritas en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render). Si no existen, el proyecto usa los valores de desarrollo y funciona igual en local.
+
 ### 5. Aplicar las migraciones
 
 ```powershell
@@ -163,6 +180,8 @@ Todas las pantallas piden iniciar sesión, salvo el login (`/acceso/login/`) y e
 
 Al crear los usuarios de ejemplo, `poblar_datos` genera una clave aleatoria y la muestra una sola vez en pantalla. Si se prefiere una clave propia para la demostración, se define en el archivo `.env` con la variable `CLAVE_DEMO` (ese archivo no se sube al repositorio). El código no contiene ninguna clave escrita.
 
+Con `DEBUG=True`, las tres páginas de error se pueden previsualizar en `http://127.0.0.1:8000/vista-403/`, `/vista-404/` y `/vista-500/`. Esas rutas solo existen en desarrollo; con `DEBUG=False` Django usa directamente `403.html`, `404.html` y `500.html`.
+
 Para verificar los accesos y la protección CSRF en cualquier momento:
 
 ```powershell
@@ -172,7 +191,7 @@ python manage.py verificar_accesos
 
 ## Pruebas
 
-El proyecto tiene **239 pruebas automatizadas** en `gestion/tests/`, un archivo por bloque: modelos, servicios, consultas, formularios, vistas y seguridad. Se ejecutan con SQLite (deja `DB_ENGINE=sqlite` en `.env`):
+El proyecto tiene **244 pruebas automatizadas** en `gestion/tests/`, un archivo por bloque: modelos, servicios, consultas, formularios, vistas, seguridad, la comprobación de salud (`test_salud.py`) y el comando `crear_superusuario` (`test_comandos.py`). Se ejecutan con SQLite (deja `DB_ENGINE=sqlite` en `.env`):
 
 ```powershell
 # Ejecuta todas las pruebas; Django usa una base temporal y no toca tus datos
@@ -182,9 +201,9 @@ python manage.py test gestion
 python manage.py test gestion.tests.test_seguridad -v 2
 ```
 
-Resultado esperado: `Ran 239 tests` y `OK`. El detalle de los casos, los resultados y la verificación de que las pruebas detectan fallos están en [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx).
+Resultado esperado: `Ran 244 tests` y `OK`. Las primeras 239 son las de la [etapa 8](#etapa-8-pruebas-automatizadas) y están documentadas, junto con la verificación de que detectan fallos, en [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx). Las 5 restantes se agregaron en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render): 1 del endpoint `/salud/` y 4 del comando `crear_superusuario`.
 
-**Instalación desde cero comprobada:** se clonó el repositorio en otra carpeta, se creó un entorno virtual nuevo, se instalaron las dependencias, se copió `.env.example` a `.env`, se aplicaron las migraciones, se cargaron los datos de ejemplo y las pruebas terminaron en `OK`.
+**Instalación desde cero comprobada:** se clonó el repositorio en otra carpeta, se creó un entorno virtual nuevo, se instalaron las dependencias, se copió `.env.example` a `.env`, se aplicaron las migraciones, se cargaron los datos de ejemplo y las pruebas (239 en ese momento) terminaron en `OK`.
 
 ![Instalación desde cero y pruebas en una copia limpia](docs/capturas/143_instalacion_desde_cero.png)
 
@@ -193,8 +212,9 @@ Resultado esperado: `Ran 239 tests` y `OK`. El detalle de los casos, los resulta
 ```text
 alke_wallet/
 ├── core/                      # Paquete de configuración del proyecto
-│   ├── settings.py            # Configuración general y de base de datos
-│   ├── urls.py                # Rutas principales
+│   ├── settings.py            # Configuración general; en producción lee su valor desde variables de entorno
+│   ├── urls.py                # Rutas principales (login, registro, salud y vistas previas de errores en desarrollo)
+│   ├── formats/es_CL/         # Formato de números chileno: punto como separador de miles y coma decimal
 │   ├── asgi.py
 │   └── wsgi.py
 ├── gestion/                   # App principal con la lógica del negocio
@@ -202,10 +222,13 @@ alke_wallet/
 │   │   └── commands/
 │   │       ├── poblar_datos.py        # Carga datos de demostración sin duplicar
 │   │       ├── demo_consultas.py      # Ejecuta y muestra todas las consultas
-│   │       └── verificar_accesos.py   # Prueba roles, alcance por usuario y CSRF (no deja datos)
+│   │       ├── verificar_accesos.py   # Prueba roles, alcance por usuario y CSRF (no deja datos)
+│   │       └── crear_superusuario.py  # Crea el administrador desde variables de entorno (despliegue)
 │   ├── migrations/
 │   │   ├── 0001_initial.py    # Migración inicial: crea las 5 tablas de la app
 │   │   └── 0002_alter_cliente_options_alter_contacto_options_and_more.py  # Nombres legibles (sin cambios en las tablas)
+│   ├── templatetags/
+│   │   └── ui.py              # Filtros que aplican las clases de Bootstrap a los campos de un formulario
 │   ├── models.py              # Modelos: Moneda, Cliente, Contacto, Cuenta, Transaccion
 │   ├── consultas.py           # Consultas reutilizables: ORM, raw() y cursor (12 funciones)
 │   ├── servicios.py           # registrar_transaccion() atómica con bloqueo; crear_cliente_con_cuenta() para el registro
@@ -213,26 +236,33 @@ alke_wallet/
 │   ├── alcance.py             # Filtros por dueño: cada cliente ve solo lo suyo
 │   ├── forms.py               # Formularios de clientes, cuentas, transacciones, contactos y registro
 │   ├── admin.py               # Panel de administración: columnas, búsqueda, filtros y tablas anidadas
-│   ├── views.py               # Vistas basadas en clases: CRUD, inicio, reporte, registro y perfil
+│   ├── views.py               # Vistas basadas en clases: CRUD, inicio, reporte, registro, perfil y salud
 │   ├── urls.py                # Rutas de la app, con nombre
-│   └── tests/                 # Pruebas automatizadas (etapa 8), un archivo por bloque
+│   └── tests/                 # Pruebas automatizadas, un archivo por bloque (244 en total)
 ├── templates/
-│   ├── base.html              # Plantilla común: encabezado, menú, mensajes y pie
+│   ├── base.html              # Plantilla común: menú, mensajes y pie de página
 │   ├── inicio.html            # Página de inicio (distinta para personal y clientes)
-│   ├── reporte.html           # Reporte general
+│   ├── reporte.html           # Reporte general con barras de proporción
 │   ├── perfil.html            # Datos de acceso y de cliente de la persona con sesión
-│   ├── 403.html               # Página de acceso denegado
-│   ├── registration/          # login, registro y cambiar_clave
+│   ├── 403.html, 404.html     # Páginas de error que heredan de base.html
+│   ├── 500.html               # Error del servidor: documento independiente, sin depender de la sesión ni del menú
+│   ├── componentes/           # Piezas reutilizables: campos de formulario, etiquetas, avisos y lista de movimientos para celular
+│   ├── registration/          # landing (portada), login, registro y cambiar_clave
 │   ├── clientes/              # lista, detalle, formulario y confirmar_eliminar
 │   ├── cuentas/               # lista, detalle, formulario y confirmar_eliminar
 │   ├── transacciones/         # lista, detalle y formulario
 │   └── contactos/             # formulario y confirmar_eliminar
 ├── static/
-│   ├── css/estilos.css        # Estilos de la aplicación
+│   ├── css/estilos.css        # Capa de marca sobre Bootstrap: colores, tarjetas, portada, pie y animaciones
+│   ├── js/app.js              # Ver contraseña, evitar doble envío, avisos que se cierran y ventana de espera
 │   └── img/logo.svg           # Logo
 ├── docs/
 │   ├── capturas/              # Capturas de pantalla usadas en este README
+│   ├── vista_previa/          # Capturas del nuevo diseño en escritorio, tablet y celular
 │   └── informe_pruebas.docx   # Informe de pruebas con casos, resultados y evidencias
+├── build.sh                   # Script de construcción para Render (instala, migra, crea el administrador y carga datos)
+├── render.yaml                # Plano del servicio en Render
+├── .gitattributes             # Fuerza saltos de línea LF en los scripts (Linux falla con los de Windows)
 ├── manage.py                  # Utilidad de línea de comandos de Django
 ├── requirements.txt           # Dependencias del proyecto
 ├── .env                       # Credenciales locales (NO se sube a GitHub)
@@ -1602,6 +1632,8 @@ python manage.py collectstatic
 
 `staticfiles/` se genera con `collectstatic` y no se sube al repositorio.
 
+> **Nota:** los estilos de esta etapa se reemplazaron después, en la [etapa 9](#etapa-9-mejora-visual-con-bootstrap), por una capa de marca sobre Bootstrap. Las capturas siguientes muestran el diseño original.
+
 ![Estructura de la carpeta static](docs/capturas/101_static_estructura.png)
 
 ![findstatic y collectstatic](docs/capturas/102_findstatic_collectstatic.png)
@@ -1821,6 +1853,8 @@ OK
 
 ![verificar_accesos: 55 de 55 comprobaciones correctas](docs/capturas/142_pruebas_correctas.png)
 
+> **Nota:** el total posterior es de 244 pruebas. Las 5 pruebas adicionales (`test_salud.py` y `test_comandos.py`) se agregaron en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render).
+
 **Qué se aprendió y decisiones:**
 
 - **Las pruebas usan una base temporal.** Django crea una base vacía, deshace cada prueba y la elimina al final; los datos reales no se tocan.
@@ -1841,7 +1875,348 @@ OK
 - Un formulario se prueba con `is_valid()` y `errors`; una vista, con `self.client`, `reverse` y `assertRedirects`.
 - Sin sesión redirige al login, con rol incorrecto da 403 y con un registro ajeno da 404.
 
-### Etapa 9: revisión final y publicación
+### Etapa 9: mejora visual con Bootstrap
+
+**Objetivo:** dar a la aplicación una interfaz profesional, moderna y adaptable a escritorio, tablet y celular, sin cambiar la lógica del sistema (modelos, vistas, reglas y rutas).
+
+**Rama de trabajo:** `feature/bootstrap`. Esta etapa no cambia los modelos, por lo que no genera migraciones. Se integró a `main` con 7 commits por tema (fast-forward).
+
+**Subetapas:**
+
+| Subetapa | Qué se hizo |
+|---|---|
+| 9.1 | Base: Bootstrap 5.3.3, Bootstrap Icons y la tipografía Inter por CDN; `base.html` con menú y pie de página; `estilos.css` como capa de marca |
+| 9.2 | Componentes de plantilla reutilizables y filtros propios para dibujar los formularios |
+| 9.3 | Rediseño de inicio, perfil, reporte, clientes, cuentas, transacciones y contactos |
+| 9.4 | Portada pública con el inicio de sesión y el registro en la misma pantalla |
+| 9.5 | Adaptación a tablet y celular |
+| 9.6 | Comportamientos en el navegador (`static/js/app.js`) |
+| 9.7 | Páginas de error 403, 404 y 500 con el mismo diseño |
+| 9.8 | Montos con formato chileno |
+
+#### 9.1 Base: Bootstrap, menú y pie de página
+
+Bootstrap se carga desde un CDN en `base.html`, junto con Bootstrap Icons y la fuente Inter. `static/css/estilos.css` se reescribió: ya no define el diseño completo, sino una **capa de marca** sobre Bootstrap, con variables de color (azul `#1D4E89`, turquesa `#17B8A6`), tarjetas, tablas, formularios y animaciones.
+
+| Pieza de `base.html` | Qué hace |
+|---|---|
+| Menú superior | Degradado azul con línea turquesa; se convierte en botón de hamburguesa bajo 992 px |
+| Enlace activo | Se marca según `request.resolver_match.url_name`, el nombre de la ruta actual |
+| Desplegable de usuario | Muestra la inicial, el nombre y el rol; contiene "Mi perfil" y "Cerrar sesión" (que sigue siendo un formulario POST con CSRF) |
+| Avisos | `componentes/_mensajes.html`; Django llama `error` al tipo que Bootstrap llama `danger`, y se traduce |
+| Pie de página | Marca, enlaces según el rol, tecnologías y año actual con `{% now "Y" %}` |
+| Bloque `cuerpo` | Permite que la portada reemplace el contenedor centrado y use todo el ancho |
+
+#### 9.2 Componentes y filtros de plantilla
+
+| Pieza | Dónde | Para qué |
+|---|---|---|
+| Filtro `bootstrap` | `gestion/templatetags/ui.py` | Agrega `form-control`, `form-select` o `form-check-input` a un campo y `is-invalid` si tiene errores |
+| Filtros `es_casilla` y `es_lista` | `gestion/templatetags/ui.py` | Detectan el tipo de campo para dibujarlo distinto |
+| `_campos.html` | `templates/componentes/` | Dibuja todos los campos de un formulario (etiqueta, campo, ayuda y errores); con `dos_columnas=True` los acomoda de dos en dos |
+| `_tipo.html` | `templates/componentes/` | Etiqueta de color según el tipo de movimiento: verde, rojo o azul |
+| `_estado.html` | `templates/componentes/` | Etiqueta Activa o Inactiva de una cuenta |
+| `_mensajes.html` | `templates/componentes/` | Avisos de las vistas |
+| `_movimiento_item.html` | `templates/componentes/` | Fila de un movimiento pensada para celular |
+
+La alternativa de editar `forms.py` para agregar las clases a cada widget se descartó: habría mezclado la presentación con la lógica de los formularios y obligado a tocar las pruebas.
+
+#### 9.3 Pantallas de gestión
+
+Las listas pasaron a tarjetas con tablas dentro, las fichas a tarjetas con datos y avatares con la inicial, y las confirmaciones de borrado a una tarjeta con franja roja. En el inicio, el personal ve tres tarjetas con los totales y el cliente ve sus cuentas como tarjetas con aspecto de tarjeta bancaria. El reporte muestra las proporciones con barras hechas con CSS puro (`{% widthratio %}` calcula el porcentaje).
+
+Un cambio de comportamiento: los botones que solo puede usar el personal (nueva cuenta, editar, eliminar, volver al listado de clientes) **ya no se muestran a los clientes**. Antes se veían y, al pulsarlos, la persona recibía un 403.
+
+#### 9.4 Portada con inicio de sesión y registro
+
+`templates/registration/landing.html` es la portada pública. De ella heredan `login.html` y `registro.html`, que solo aportan su formulario. Incluye un mensaje de presentación, tres ventajas, una tarjeta decorativa (no muestra datos reales), las características, "Empieza en tres pasos" y un llamado final.
+
+- **Inicio de sesión y registro en la misma pantalla:** las pestañas "Iniciar sesión" y "Crear cuenta" son enlaces a `/acceso/login/#acceso` y `/registro/#acceso`. Cada formulario sigue atendido por su propia vista, por lo que no cambió ninguna ruta ni lógica; para la persona se siente como una sola pantalla.
+- **Ancho distinto por página:** la portada define bloques (`columna_texto`, `columna_acceso`, `clase_tarjeta_acceso`) para que el registro, que tiene siete campos, use una tarjeta más ancha.
+- **Registro en dos columnas:** los campos se acomodan de dos en dos; la lista de monedas ocupa todo el ancho. Las ayudas largas (más de 120 caracteres), como los requisitos de la contraseña, quedan plegadas detrás de "Ver requisitos". El formulario pasó de unos 900 px de alto a unos 600 px en escritorio.
+
+![Portada en escritorio](docs/vista_previa/escritorio_portada.png)
+
+![Inicio del personal en escritorio](docs/vista_previa/escritorio_inicio_personal.png)
+
+#### 9.5 Adaptación a tablet y celular
+
+| Elemento | Celular | Tablet (desde 768 px) | Escritorio (desde 992 px) |
+|---|---|---|---|
+| Menú | Botón de hamburguesa | Hamburguesa | Menú horizontal |
+| Movimientos (inicio y listado) | Lista compacta con ícono, tipo, cuentas y monto | Tabla completa | Tabla completa con descripción |
+| Cuentas y clientes | Columnas secundarias ocultas; el dato va bajo el principal | Más columnas | Todas las columnas |
+| Filtros de transacciones | Plegados detrás de un botón | Siempre visibles | Siempre visibles |
+| Totales del inicio | Tres tarjetas en una fila | Tres tarjetas | Tres tarjetas |
+| Paginación | Botones anterior y siguiente con el número al centro | Igual, con texto | Igual, con texto |
+| Portada | Texto centrado, tarjeta de acceso debajo | Tarjeta centrada con ancho máximo | Texto a la izquierda y tarjeta a la derecha |
+| Pie de página | Marca centrada y dos columnas ordenadas a la izquierda | Tres columnas | Tres columnas |
+
+Se revisó con capturas de Chrome a 390 px (celular), 768 a 820 px (tablet) y 1100 a 1280 px (escritorio). No se probó en un teléfono real.
+
+![Portada en tablet](docs/vista_previa/tablet_portada.png)
+
+![Inicio en tablet](docs/vista_previa/tablet_inicio.png)
+
+![Portada en celular](docs/vista_previa/movil_portada.png)
+
+![Inicio del personal en celular](docs/vista_previa/movil_inicio_personal.png)
+
+![Inicio del cliente en celular](docs/vista_previa/movil_inicio_cliente.png)
+
+![Movimientos en celular](docs/vista_previa/movil_transacciones.png)
+
+#### 9.6 Comportamientos en el navegador
+
+`static/js/app.js` mejora la experiencia, pero la aplicación funciona igual sin él:
+
+| Comportamiento | Qué hace |
+|---|---|
+| Ver u ocultar la contraseña | Agrega un botón con un ojo a cada campo de contraseña |
+| Evitar el doble envío | Al enviar un formulario POST, el botón se desactiva y muestra un indicador de carga, para que un doble clic no registre dos veces el mismo movimiento |
+| Avisos que se cierran | Los avisos de éxito desaparecen a los 6 segundos; los de error y advertencia se quedan hasta que se cierren |
+
+Cuando se vuelve a una página con el botón Atrás, los botones desactivados se reactivan (evento `pageshow`).
+
+#### 9.7 Páginas de error
+
+| Página | Cuándo aparece | Botones |
+|---|---|---|
+| `403.html` | Una persona entra a una sección que no le corresponde | "Volver a mi panel" (con sesión) o "Iniciar sesión"; "Volver atrás" |
+| `404.html` | La dirección o el registro no existen | "Volver a mi panel" (con sesión) o "Ir al inicio"; "Volver atrás" |
+| `500.html` | Error interno del servidor | "Reintentar" e "Ir al inicio" |
+
+La 403 y la 404 heredan de `base.html`. La **500 es un documento independiente**: si el error viene de la base de datos o de la sesión, una página que dependa del menú o de `user` fallaría también. Por eso no usa `{% url %}`, `user` ni `request`, solo archivos estáticos y el enlace fijo `/`.
+
+Con `DEBUG=True`, Django muestra su propia página técnica en lugar de `404.html` y `500.html`. Para ver los diseños en desarrollo existen las rutas `/vista-403/`, `/vista-404/` y `/vista-500/`, que solo se registran cuando `DEBUG` es `True`. Los tres errores se comprobaron de forma real con `DEBUG=False`: un 403 (un cliente entrando al listado de clientes), un 404 (dirección inexistente) y un 500 (excepción forzada en la vista de inicio).
+
+#### 9.8 Montos con formato chileno
+
+Los montos pasaron de `$115000,00` a `$115.000,00`. Django solo trae el formato de España para el español, que usa un espacio como separador de miles. En Chile se usa el punto, así que se definió un formato propio:
+
+| Configuración | Para qué sirve |
+|---|---|
+| `USE_THOUSAND_SEPARATOR = True` | Activa el separador de miles en toda la aplicación |
+| `FORMAT_MODULE_PATH = ['core.formats']` | Indica dónde buscar formatos propios |
+| `core/formats/es_CL/formats.py` | Define punto como separador de miles y coma como separador decimal |
+
+**Decisiones:**
+
+| Decisión | Alternativa | Por qué |
+|---|---|---|
+| Bootstrap 5 | Tailwind o CSS propio | Es el estándar para tablas, formularios y menú responsive, y no requiere compilar nada |
+| Bootstrap por CDN | Descargarlo al proyecto | Evita subir archivos de terceros; la aplicación necesita internet para verse completa |
+| Filtros de plantilla propios | `django-crispy-forms` | Evita una dependencia nueva para algo que se resuelve con un filtro de pocas líneas |
+| Ocultar columnas y mostrar una lista en celular | Dejar la tabla con desplazamiento horizontal | Una tabla de siete columnas obligaba a desplazarse y cortaba el monto |
+| Pestañas como enlaces entre dos rutas | Un solo formulario con JavaScript | No cambia las vistas ni las rutas; funciona sin JavaScript |
+| Barras de proporción con CSS | Chart.js | Cubre lo esencial sin otra librería |
+| Modo oscuro descartado | Activarlo con `data-bs-theme` | La paleta de marca está fija; habría que rediseñarla |
+
+**Incidencias resueltas:**
+
+| Problema | Causa | Solución |
+|---|---|---|
+| Las tarjetas se veían grises en lugar de blancas | Bootstrap toma el color de `var(--bs-body-bg)`, que se había cambiado a gris | Fijar `--bs-card-bg` en blanco y hacer transparentes las tablas |
+| La tarjeta decorativa perdió su inclinación | La animación de entrada terminaba en `transform: translateY(0)` y anulaba el giro | Crear una animación propia (`aparecer-inclinada`) que conserva la rotación |
+| El desplegable de usuario se salía de la pantalla en celular | Estaba fuera de un `navbar-nav`, así que Bootstrap lo posicionaba con Popper hacia afuera | Colocarlo dentro de un `<ul class="navbar-nav">`: se abre dentro del menú |
+| Los títulos de la portada salían oscuros sobre fondo azul | Una regla global les asignaba un color fijo | Usar la variable `--bs-heading-color` y cambiarla dentro de las secciones oscuras |
+| Los montos se cortaban en celular | Tabla de siete columnas | Lista compacta en celular y columnas secundarias ocultas |
+| Montos con un espacio como separador | El formato de Django para español usa un espacio | Formato propio `es_CL` |
+
+**Verificación:** las 239 pruebas existentes siguieron pasando sin cambios después de cada rediseño, y se renderizaron las pantallas como personal, como cliente y sin sesión, todas con código 200.
+
+**Si solo recuerdas esto:**
+
+- Bootstrap pone la estructura; `estilos.css` solo agrega la marca.
+- Un componente reutilizable (`{% include %}`) evita repetir el mismo HTML en cada pantalla.
+- La página de error 500 no puede depender de nada que pueda fallar: ni sesión, ni menú, ni base de datos.
+
+### Etapa 10: preparación para el despliegue en Render
+
+**Objetivo:** dejar el proyecto listo para publicarse en Render (aplicación) con PostgreSQL en Neon (base de datos), sin escribir claves en el código y sin romper el funcionamiento local.
+
+**Rama de trabajo:** `feature/espera` (endpoint de salud y ventana de espera, ya fusionada) y `feature/render` (configuración de producción, con los commits listos). Esta etapa no cambia los modelos, por lo que no genera migraciones.
+
+**Subetapas:**
+
+| Subetapa | Qué se hizo |
+|---|---|
+| 10.1 | Variables de entorno para `DEBUG`, `SECRET_KEY`, hosts y orígenes de confianza |
+| 10.2 | Dependencias nuevas en `requirements.txt` |
+| 10.3 | Base de datos por `DATABASE_URL` y archivos estáticos con WhiteNoise |
+| 10.4 | Seguridad en producción y registros |
+| 10.5 | Comando `crear_superusuario` |
+| 10.6 | `build.sh`, `render.yaml` y `.gitattributes` |
+| 10.7 | Endpoint `/salud/` y ventana de espera |
+| 10.8 | Verificación simulando la producción en el equipo |
+| 10.9 | Base de datos en Neon |
+| 10.10 | Pendiente: crear el servicio en Render |
+
+#### 10.1 Variables de entorno
+
+Los valores que cambian entre el equipo y el servidor se leen del entorno. Si la variable no existe se usa el valor de desarrollo, así el proyecto sigue funcionando en local sin configurar nada.
+
+| Variable | Para qué sirve | Valor en local | Valor en Render |
+|---|---|---|---|
+| `DEBUG` | Activa o no el modo de desarrollo | `True` (por defecto) | `False` |
+| `SECRET_KEY` | Clave secreta de Django | Clave de desarrollo (pública) | Aleatoria, la genera Render |
+| `ALLOWED_HOSTS` | Direcciones desde las que se puede entrar | Vacía | `.onrender.com` |
+| `CSRF_TRUSTED_ORIGINS` | Orígenes desde los que se aceptan formularios | Vacía | `https://*.onrender.com` |
+| `DATABASE_URL` | Conexión completa a la base de datos | No existe | Dirección de Neon |
+| `DJANGO_SUPERUSER_USERNAME`, `_EMAIL`, `_PASSWORD` | Datos del administrador | No existen | Privados, en el panel de Render |
+| `CLAVE_DEMO` | Clave de los clientes de demostración | Opcional | Privada, en el panel de Render |
+
+Si `DEBUG=False` y falta `SECRET_KEY` (o es la de desarrollo), la aplicación se niega a arrancar con un error `ImproperlyConfigured`. Así es imposible publicarla por descuido con la clave pública del repositorio. El punto inicial de `.onrender.com` incluye todos los subdominios.
+
+#### 10.2 Dependencias
+
+| Cambio en `requirements.txt` | Para qué |
+|---|---|
+| `gunicorn` | Servidor que ejecuta la aplicación en Render |
+| `whitenoise` | Sirve CSS, JS e imágenes; en Render no hay otro servidor que lo haga |
+| `dj-database-url` | Convierte `DATABASE_URL` en la configuración de Django |
+| `psycopg` → `psycopg[binary]` | Instala directo en Render, sin compilar |
+
+Además, el archivo se reescribió en UTF-8 sin BOM y con saltos de línea LF; tenía el formato de Windows.
+
+#### 10.3 Base de datos y archivos estáticos
+
+- **Base de datos:** si existe `DATABASE_URL`, tiene prioridad sobre todo lo demás (`dj_database_url.config(conn_max_age=600, conn_health_checks=True)`). Si no, se mantiene la lógica anterior: `DB_ENGINE=postgres` para PostgreSQL local o SQLite por defecto.
+- **Archivos estáticos:** el middleware `whitenoise.middleware.WhiteNoiseMiddleware` va justo después de `SecurityMiddleware`. En producción (`DEBUG=False`) se usa `CompressedManifestStaticFilesStorage`, que comprime los archivos y les pone un código en el nombre (`estilos.9ea9b391c386.css`) para que el navegador descargue la versión nueva cuando cambian. Esa versión necesita haber ejecutado `collectstatic`, por eso en desarrollo se usa el almacenamiento normal.
+
+#### 10.4 Seguridad y registros en producción
+
+Cuando `DEBUG` es `False`:
+
+| Configuración | Qué hace |
+|---|---|
+| `SECURE_PROXY_SSL_HEADER` | Render atiende el HTTPS por fuera y le pasa a Django la petición como HTTP; este encabezado le indica que el original era HTTPS |
+| `SECURE_SSL_REDIRECT = True` | Redirige toda visita HTTP a HTTPS |
+| `SECURE_REDIRECT_EXEMPT` | Exime a `/salud/`, que Render consulta por HTTP interno |
+| `SESSION_COOKIE_SECURE` y `CSRF_COOKIE_SECURE` | Las cookies de sesión y de CSRF solo viajan por HTTPS |
+| `SECURE_HSTS_SECONDS = 3600` | El navegador recordará usar solo HTTPS durante 1 hora (se puede subir cuando todo esté estable) |
+
+**Registros:** con `DEBUG=False`, Django no muestra los errores en ninguna parte por defecto. Se configuró `LOGGING` para enviarlos a la consola, que es lo que Render muestra en la pestaña de registros.
+
+#### 10.5 Comando `crear_superusuario`
+
+Render gratuito no ofrece una terminal, así que el administrador no se puede crear con `createsuperuser`. El comando `python manage.py crear_superusuario` lo crea desde las variables `DJANGO_SUPERUSER_*`:
+
+- Si faltan las variables, no hace nada (así no falla en local).
+- Si el usuario ya existe, no lo toca (repetir el despliegue no cambia una clave que se haya modificado después).
+- Nunca imprime la contraseña.
+
+Tiene 4 pruebas en `gestion/tests/test_comandos.py`: crea el superusuario, no hace nada sin variables, repetirlo no cambia la clave y no muestra la clave en pantalla.
+
+#### 10.6 `build.sh`, `render.yaml` y `.gitattributes`
+
+`build.sh` se ejecuta en cada despliegue y se detiene si cualquier paso falla (`set -o errexit`):
+
+| Paso | Comando |
+|---|---|
+| 1 | `pip install -r requirements.txt` |
+| 2 | `python manage.py collectstatic --no-input` |
+| 3 | `python manage.py migrate --no-input` |
+| 4 | `python manage.py crear_superusuario` |
+| 5 | `python manage.py poblar_datos` (no duplica y no cambia las claves de usuarios que ya existen) |
+
+`render.yaml` es el plano del servicio: tipo web, plan gratuito, `buildCommand: bash build.sh`, `startCommand: gunicorn core.wsgi:application --workers 2 --timeout 120` y `healthCheckPath: /salud/`. Los valores privados (`DATABASE_URL`, `DJANGO_SUPERUSER_*` y `CLAVE_DEMO`) están marcados con `sync: false`: se escriben a mano en el panel y no se guardan en el repositorio.
+
+`.gitattributes` fuerza saltos de línea LF en `*.sh`, `render.yaml` y `requirements.txt`. Con los saltos de Windows (CRLF), Linux no puede ejecutar `build.sh`.
+
+#### 10.7 Endpoint `/salud/` y ventana de espera
+
+`/salud/` responde `{"estado": "ok"}` sin sesión ni consulta a la base de datos, y tiene una prueba. La usa Render para saber que la aplicación arrancó.
+
+**Ventana de espera:** el plan gratuito de Render duerme el servicio tras 15 minutos sin visitas y la primera respuesta puede tardar cerca de un minuto; la base de Neon también se suspende por inactividad. Al enviar el formulario de inicio de sesión o el de registro, la aplicación muestra una ventana con un indicador de carga cuyo mensaje cambia con el tiempo:
+
+| Tiempo | Mensaje |
+|---|---|
+| Al enviar | "Estamos procesando tu solicitud" |
+| 4 segundos | "Esto está tardando un poco más de lo normal" |
+| 20 segundos | "Despertando el servidor…", con la explicación de que la demostración usa un servidor gratuito |
+| 75 segundos | Aparece el botón "Reintentar" |
+
+Desaparece sola: cuando el servidor responde, el navegador carga la página siguiente. Se activa con el atributo `data-espera` en el formulario y se implementa en `static/js/app.js`. Una página puente en GitHub Pages se consideró y se descartó por ser más llamativa. La primera carga con el servicio dormido la muestra Render con su propia pantalla, que no se puede personalizar en el plan gratuito; la ventana cubre lo que ocurre después.
+
+#### 10.8 Verificación simulando la producción
+
+Con `DEBUG=False`, `SECRET_KEY` y `DATABASE_URL` definidos, una base temporal y el mismo orden de pasos de `build.sh`, se comprobó:
+
+| Comprobación | Resultado |
+|---|---|
+| `collectstatic` | 399 archivos procesados con nombre con código |
+| `migrate` | Todas las migraciones aplicadas |
+| `crear_superusuario` (dos veces) | La primera crea el usuario; la segunda informa que ya existe |
+| `poblar_datos` | Datos de demostración cargados |
+| `/salud/` por HTTP | 200 `{"estado": "ok"}` |
+| Otra página por HTTP | 301 hacia HTTPS |
+| Login por HTTPS | 200 |
+| CSS con código en el nombre | 200, `text/css`, caché de largo plazo |
+| Dirección inexistente | 404 con la página propia |
+| Inicio de sesión de un cliente | 302 al inicio; cookies de sesión y CSRF con `secure` |
+| Arrancar sin `SECRET_KEY` | `ImproperlyConfigured` |
+
+Las 244 pruebas pasan. `check --deploy` informa un error por el backend de correo de consola (la aplicación no envía correos) y avisos de HSTS que se dejaron sin cambiar a propósito. Gunicorn no corre en Windows, así que la verificación usa el cliente de pruebas de Django, que recorre las mismas capas (incluido WhiteNoise); el arranque con gunicorn solo se podrá comprobar en Render.
+
+#### 10.9 Base de datos en Neon
+
+Se creó un proyecto en Neon y se usó la **cadena de conexión directa** (sin la opción "pooled"), para evitar problemas con los cursores del servidor de Django. La conexión se verificó desde el equipo con `DATABASE_URL` definida solo para esa sesión de PowerShell:
+
+```powershell
+$env:DATABASE_URL = "postgresql://usuario:clave@host/base?sslmode=require"
+.\venv\Scripts\python.exe manage.py showmigrations gestion
+```
+
+Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se conecta a la base nueva y vacía de Neon, y no al `db.sqlite3` local. La cadena de conexión nunca se escribe en un archivo del repositorio.
+
+**Decisiones:**
+
+| Decisión | Alternativa | Por qué |
+|---|---|---|
+| Render | Vercel | Vercel es serverless: no sirve archivos estáticos de Django ni mantiene SQLite. Render ejecuta la aplicación como un servicio normal |
+| Neon para la base de datos | PostgreSQL de Render | La base gratuita de Render expira; la de Neon no |
+| `DATABASE_URL` con prioridad | Variables `DB_*` separadas | Una sola cadena es lo que entregan Neon y Render |
+| Archivos estáticos con código en el nombre solo con `DEBUG=False` | Siempre | Requieren `collectstatic`; en desarrollo y en las pruebas fallarían |
+| Comando `crear_superusuario` | Crear el administrador desde una terminal | Render gratuito no tiene terminal |
+| `poblar_datos` en cada construcción | Cargarlo una vez a mano | Es idempotente y deja la demostración siempre disponible |
+| Clave de demostración pública solo para clientes | Publicar también la del administrador | El personal puede borrar todos los datos; esa clave queda privada |
+| Cadena directa de Neon | Cadena con pooler | El pooler puede dar problemas con los cursores de Django |
+
+**Incidencias resueltas:**
+
+| Problema | Causa | Solución |
+|---|---|---|
+| `.env.example` tenía `B_ENGINE` | Error de tipeo (faltaba la `D` de `DB_ENGINE`) | Corregido y documentadas las variables de producción |
+| Un script con saltos de línea de Windows falla en Linux | Git en Windows convierte LF en CRLF | `.gitattributes` con `eol=lf` |
+| Los errores no aparecerían en los registros de Render | Con `DEBUG=False` Django no los muestra por defecto | Configuración `LOGGING` hacia la consola |
+| `requirements.txt` con BOM y saltos de Windows | Se generó con PowerShell | Reescrito en UTF-8 sin BOM y con LF |
+
+#### 10.10 Pendiente: crear el servicio en Render
+
+| Paso | Estado |
+|---|---|
+| Código y configuración de producción | Listo |
+| Base de datos en Neon y conexión verificada | Listo |
+| Fusionar `feature/render` con `main` y publicar en GitHub | Pendiente |
+| Crear el servicio en Render desde `render.yaml` y cargar los valores privados | Pendiente |
+| Verificar en línea: inicio de sesión, CRUD, reporte, estilos y páginas de error | Pendiente |
+| Enlace de la demostración en este README | Pendiente |
+
+Supuesto por confirmar: `render.yaml` fija `PYTHON_VERSION` en `3.13.5`, mientras que en local se usa Python 3.14.6; si Render no admite esa versión exacta, se ajusta en una línea.
+
+**Limitaciones conocidas:**
+
+- El plan gratuito de Render duerme el servicio tras 15 minutos sin visitas y tarda cerca de un minuto en despertar; Neon también se suspende por inactividad.
+- La demostración pública permite que cualquiera se registre y cree datos de prueba.
+
+**Si solo recuerdas esto:**
+
+- Nada privado va al repositorio: lo que cambia entre el equipo y el servidor se lee de variables de entorno.
+- `DEBUG=False` cambia varias cosas a la vez: estáticos con código, HTTPS obligatorio, cookies seguras y la exigencia de una `SECRET_KEY` propia.
+- Sin terminal, todo lo que se hace una vez (administrador, datos de ejemplo) debe poder ejecutarse sin intervención en la construcción.
+
+### Etapa 11: revisión final y publicación
 
 **Objetivo:** dejar el proyecto listo para entregarlo y mostrarlo.
 
@@ -1849,10 +2224,15 @@ OK
 
 | Subetapa | Qué se hizo |
 |---|---|
-| 9.1 | Revisión del repositorio: sin `.env`, base de datos, entornos virtuales ni claves escritas en el código; `.gitignore` y `.env.example` al día; migraciones sin cambios pendientes; dependencias con versiones fijas; instalación desde cero comprobada con las 239 pruebas en `OK` |
-| 9.2 | README final: introducción, funciones, tabla de requisitos con enlaces, sección de pruebas y datos del autor |
+| 11.1 | Revisión del repositorio: sin `.env`, base de datos, entornos virtuales ni claves escritas en el código; `.gitignore` y `.env.example` al día; migraciones sin cambios pendientes; dependencias con versiones fijas; instalación desde cero comprobada (239 pruebas en `OK` en ese momento; hoy son 244) |
+| 11.2 | README completo con la documentación por etapa, que se usa para generar el documento técnico en Word |
 
-**Pendiente:** la publicación del sitio en línea y la tarjeta del proyecto en el portafolio. Para publicarlo hay que pasar `SECRET_KEY`, `DEBUG` y `ALLOWED_HOSTS` a variables de entorno, servir los archivos estáticos y usar PostgreSQL; la `SECRET_KEY` actual de desarrollo no debe usarse en producción.
+**Pendiente:**
+
+- Publicar el sitio en línea y agregar su enlace (etapa 10).
+- Versión resumida del README para quien solo quiera inspeccionar el proyecto, con el detalle de cada etapa en el documento Word.
+- Actualizar el informe de pruebas con el total actual (244).
+- Demostración funcional en video y tarjeta del proyecto en el portafolio.
 
 ## Flujo de Git
 
@@ -1865,6 +2245,10 @@ OK
 | `feature/crud` | Vistas, formularios, servicio de movimientos, contactos y reporte | Fusionada con `main` |
 | `feature/auth` | Login, estáticos, roles, alcance por usuario, registro, perfil y verificación de accesos | Fusionada con `main` |
 | `feature/tests` | Pruebas automatizadas (modelos, servicios, consultas, formularios, vistas y seguridad) e informe | Fusionada con `main` |
+| `fix/clave-demo` | Clave de los usuarios de demostración al azar o desde `.env` | Fusionada con `main` |
+| `feature/bootstrap` | Rediseño con Bootstrap: portada, componentes, diseño responsive, páginas de error y formato de montos | Fusionada con `main` (7 commits por tema, fast-forward) |
+| `feature/espera` | Endpoint `/salud/` y ventana de espera al iniciar sesión o registrarse | Fusionada con `main` |
+| `feature/render` | Configuración de producción, `crear_superusuario`, `build.sh`, `render.yaml` y actualización del README | En curso: commits listos, pendiente de fusionar con `main` |
 
 ## Mejoras futuras
 
@@ -1872,7 +2256,10 @@ OK
 - Bloqueo temporal tras varios intentos fallidos de ingreso.
 - Número de cuenta generado de forma segura ante registros simultáneos.
 - Medición de cobertura de código con `coverage.py` y pruebas de interfaz con un navegador automatizado.
-- Publicación en línea con PostgreSQL.
+- Modo oscuro (Bootstrap lo admite, pero la paleta de la marca está fija y habría que rediseñarla).
+- Gráficos interactivos en el reporte (hoy las proporciones son barras hechas con CSS).
+- Limpieza automática de los usuarios de prueba que se registren en la demostración pública.
+- Dominio propio y envío real de correos (hoy el proyecto no envía ninguno).
 
 ## Autor
 
