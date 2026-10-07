@@ -1,0 +1,23 @@
+{# Hereda el diseño común de base.html #}
+
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Sin permiso · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página; Django la usa cuando una pantalla responde 403 #}
+{% block contenido %}
+    <h2>No tienes permiso para ver esta página</h2>
+
+    {# Caso especial: una persona con sesión, que no es del personal y no tiene un cliente asociado #}
+    {% if user.is_authenticated and not user.is_staff and not user.cliente %}
+        <p class="aviso">
+            Tu usuario todavía no tiene un cliente asociado, por eso no puedes usar esta sección.
+            Pide al personal de Alke Wallet que lo registre.
+        </p>
+    {% else %}
+        <p>Esta sección está reservada para otro tipo de usuario.</p>
+    {% endif %}
+
+    <p><a href="{% url 'gestion:inicio' %}">Volver al inicio</a></p>
+{% endblock %}
