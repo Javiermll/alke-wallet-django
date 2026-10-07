@@ -1,0 +1,55 @@
+{# Página que Django muestra cuando ocurre un error interno del servidor (error 500) #}
+{# Importante: NO hereda de base.html. Si el error viene de la base de datos, de la sesión o del propio menú, #}
+{# una página que dependa de ellos fallaría también. Por eso es un documento completo e independiente: #}
+{# no usa {% url %}, ni "user", ni "request"; solo archivos estáticos y direcciones fijas. #}
+{# En desarrollo se previsualiza en /vista-500/ (con DEBUG = True Django muestra su página técnica en lugar de esta) #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error del servidor · Alke Wallet</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    {# Los mismos estilos del resto del sitio #}
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body class="d-flex flex-column min-vh-100">
+    {# Barra simple con la marca; el enlace "/" lleva al inicio (si no hay sesión, el sitio redirige solo a la portada) #}
+    <nav class="navbar navbar-dark barra-alke">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="/">
+                <img src="{% static 'img/logo.svg' %}" alt="Logo de Alke Wallet" width="32" height="32">
+                Alke Wallet
+            </a>
+        </div>
+    </nav>
+
+    <main class="container py-4 flex-grow-1 d-flex align-items-center">
+        <div class="error-pagina text-center text-white w-100">
+            <span class="error-icono"><i class="bi bi-tools"></i></span>
+            <div class="error-numero">500</div>
+            <h1 class="h3 fw-bold mb-2">Algo salió mal de nuestro lado</h1>
+            <p class="opacity-75 mx-auto mb-4" style="max-width: 34rem;">
+                Tuvimos un problema inesperado y ya quedó registrado. Tu dinero y tus datos están a salvo.
+                Intenta de nuevo en unos minutos.
+            </p>
+            <div class="d-grid d-sm-flex justify-content-center gap-2">
+                {# Vuelve a cargar la página que falló #}
+                <a href="javascript:location.reload()" class="btn btn-light btn-lg fw-semibold px-4"><i class="bi bi-arrow-clockwise me-2"></i>Reintentar</a>
+                <a href="/" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-house-door me-2"></i>Ir al inicio</a>
+            </div>
+        </div>
+    </main>
+
+    {# La clase pie da el fondo oscuro del pie de página; pie-base, la franja con los derechos #}
+    <footer class="pie">
+        <div class="pie-base">
+            <div class="container py-3 text-center small">© Alke Wallet · Proyecto académico</div>
+        </div>
+    </footer>
+</body>
+</html>

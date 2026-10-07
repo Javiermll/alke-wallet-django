@@ -1,0 +1,29 @@
+{# Página que Django muestra cuando una dirección no existe (solo con DEBUG = False; en desarrollo se previsualiza en /vista-404/) #}
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Página no encontrada · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <div class="error-pagina text-center text-white">
+        <span class="error-icono"><i class="bi bi-compass"></i></span>
+        <div class="error-numero">404</div>
+        <h1 class="h3 fw-bold mb-2">No encontramos esa página</h1>
+        <p class="opacity-75 mx-auto mb-4" style="max-width: 32rem;">
+            Puede que la dirección esté mal escrita, que el registro ya no exista o que hayas llegado por un enlace antiguo.
+        </p>
+
+        <div class="d-grid d-sm-flex justify-content-center gap-2">
+            {# El botón principal depende de la sesión: con sesión vuelve al inicio del panel y sin sesión, a la portada #}
+            {% if user.is_authenticated %}
+                <a href="{% url 'gestion:inicio' %}" class="btn btn-light btn-lg fw-semibold px-4"><i class="bi bi-speedometer2 me-2"></i>Volver a mi panel</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-light btn-lg fw-semibold px-4"><i class="bi bi-house-door me-2"></i>Ir al inicio</a>
+            {% endif %}
+            {# Vuelve a la página anterior del historial del navegador #}
+            <a href="javascript:history.back()" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-arrow-left me-2"></i>Volver atrás</a>
+        </div>
+    </div>
+{% endblock %}

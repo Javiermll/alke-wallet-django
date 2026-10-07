@@ -1,23 +1,39 @@
+{# Página que Django muestra cuando alguien intenta entrar a una sección que no le corresponde (error 403) #}
+{# Tiene el mismo diseño que 404.html; en desarrollo se previsualiza en /vista-403/ #}
 {# Hereda el diseño común de base.html #}
-
 {% extends 'base.html' %}
 
 {# Título de la pestaña del navegador #}
 {% block titulo %}Sin permiso · Alke Wallet{% endblock %}
 
-{# Contenido propio de esta página; Django la usa cuando una pantalla responde 403 #}
+{# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>No tienes permiso para ver esta página</h2>
+    <div class="error-pagina text-center text-white">
+        <span class="error-icono"><i class="bi bi-lock"></i></span>
+        <div class="error-numero">403</div>
+        <h1 class="h3 fw-bold mb-2">No tienes permiso para ver esta página</h1>
 
-    {# Caso especial: una persona con sesión, que no es del personal y no tiene un cliente asociado #}
-    {% if user.is_authenticated and not user.is_staff and not user.cliente %}
-        <p class="aviso">
-            Tu usuario todavía no tiene un cliente asociado, por eso no puedes usar esta sección.
-            Pide al personal de Alke Wallet que lo registre.
-        </p>
-    {% else %}
-        <p>Esta sección está reservada para otro tipo de usuario.</p>
-    {% endif %}
+        {# Caso especial: una persona con sesión, que no es del personal y no tiene un cliente asociado #}
+        {% if user.is_authenticated and not user.is_staff and not user.cliente %}
+            <p class="opacity-75 mx-auto mb-4" style="max-width: 34rem;">
+                Tu usuario todavía no tiene un cliente asociado, por eso no puedes usar esta sección.
+                Pide al personal de Alke Wallet que lo registre.
+            </p>
+        {% else %}
+            <p class="opacity-75 mx-auto mb-4" style="max-width: 34rem;">
+                Esta sección está reservada para otro tipo de usuario. Si crees que es un error, revisa que hayas entrado con la cuenta correcta.
+            </p>
+        {% endif %}
 
-    <p><a href="{% url 'gestion:inicio' %}">Volver al inicio</a></p>
+        <div class="d-grid d-sm-flex justify-content-center gap-2">
+            {# El botón principal depende de la sesión: con sesión vuelve al inicio del panel y sin sesión, a la portada #}
+            {% if user.is_authenticated %}
+                <a href="{% url 'gestion:inicio' %}" class="btn btn-light btn-lg fw-semibold px-4"><i class="bi bi-speedometer2 me-2"></i>Volver a mi panel</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-light btn-lg fw-semibold px-4"><i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión</a>
+            {% endif %}
+            {# Vuelve a la página anterior del historial del navegador #}
+            <a href="javascript:history.back()" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-arrow-left me-2"></i>Volver atrás</a>
+        </div>
+    </div>
 {% endblock %}

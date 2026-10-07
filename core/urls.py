@@ -15,3 +15,12 @@ urlpatterns = [
     path('registro/', login_not_required(RegistroView.as_view()), name='registro'),# Registro público de clientes (login_not_required lo deja pasar sin sesión)
     path('', include('gestion.urls')),# Cualquier otra dirección se entrega a las rutas de la app gestion
 ]
+
+# Vistas previas de las páginas de error en desarrollo: con DEBUG = True Django muestra su página técnica en lugar de
+# 404.html y 500.html, así que estas rutas (solo existen cuando DEBUG es True) permiten ver los diseños
+from django.conf import settings
+from django.views.generic import TemplateView
+
+if settings.DEBUG:
+    for numero in (403, 404, 500):
+        urlpatterns.insert(0, path(f'vista-{numero}/', login_not_required(TemplateView.as_view(template_name=f'{numero}.html')), name=f'vista_{numero}'))
