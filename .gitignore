@@ -13,3 +13,6 @@ db.sqlite3
 
 # Configuración personal del editor
 .vscode/
+
+# Archivos estáticos reunidos por collectstatic (se regeneran con ese comando)
+staticfiles/
