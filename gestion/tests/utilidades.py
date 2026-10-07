@@ -33,3 +33,8 @@ def crear_cuenta(cliente, numero='0001', moneda=None, activa=True):
 # Deja dinero en una cuenta con un depósito directo (no pasa por clean, así que sirve para armar saldos)
 def depositar(cuenta, monto):
     return Transaccion.objects.create(tipo='deposito', cuenta_destino=cuenta, monto=Decimal(str(monto)))
+
+# Crea un usuario del personal (is_staff), que es quien administra todo el sistema
+def crear_personal(usuario='jefe'):
+    # Sin contraseña, igual que los clientes: las pruebas inician sesión con force_login
+    return User.objects.create_user(username=usuario, is_staff=True)
