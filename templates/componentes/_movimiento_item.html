@@ -1,0 +1,20 @@
+{# Fila de un movimiento pensada para celular: reemplaza a la tabla en pantallas chicas #}
+{# Se usa con {% include 'componentes/_movimiento_item.html' with mov=movimiento %} #}
+<a href="{% url 'gestion:transaccion_detalle' mov.pk %}" class="movimiento-item text-decoration-none">
+    {# Círculo con ícono y color según el tipo: verde entra, rojo sale, azul se mueve entre cuentas #}
+    {% if mov.tipo == 'deposito' %}
+        <span class="movimiento-icono bg-success-subtle text-success"><i class="bi bi-arrow-down-left"></i></span>
+    {% elif mov.tipo == 'retiro' %}
+        <span class="movimiento-icono bg-danger-subtle text-danger"><i class="bi bi-arrow-up-right"></i></span>
+    {% else %}
+        <span class="movimiento-icono bg-primary-subtle text-primary"><i class="bi bi-arrow-left-right"></i></span>
+    {% endif %}
+    <span class="flex-grow-1 min-w-0">
+        <span class="d-block fw-semibold text-dark">{{ mov.get_tipo_display }}</span>
+        {# Cuenta origen → cuenta destino; un guion si esa cuenta no aplica #}
+        <span class="d-block small text-muted">{{ mov.cuenta_origen.numero|default:"-" }} → {{ mov.cuenta_destino.numero|default:"-" }}</span>
+        <span class="d-block small text-muted">{{ mov.fecha|date:"d/m/Y H:i" }}</span>
+    </span>
+    {# El símbolo de la moneda sale de la cuenta destino o, si no hay, de la origen #}
+    <span class="monto text-dark">{% if mov.cuenta_destino %}{{ mov.cuenta_destino.moneda.simbolo }}{% else %}{{ mov.cuenta_origen.moneda.simbolo }}{% endif %}{{ mov.monto }}</span>
+</a>

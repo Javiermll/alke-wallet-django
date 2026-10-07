@@ -1,0 +1,42 @@
+{# Dibuja los campos de un formulario con el estilo de Bootstrap; se usa con {% include 'componentes/_campos.html' %} #}
+{# Con dos_columnas=True los campos se acomodan de dos en dos desde tablet (las listas desplegables ocupan todo el ancho) #}
+{% load ui %}
+
+{# Errores que no pertenecen a un campo en particular (por ejemplo, saldo insuficiente) #}
+{% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {% for error in form.non_field_errors %}<div><i class="bi bi-exclamation-octagon me-1"></i>{{ error }}</div>{% endfor %}
+    </div>
+{% endif %}
+
+{# Los campos ocultos no se ven, pero deben viajar con el formulario #}
+{% for oculto in form.hidden_fields %}{{ oculto }}{% endfor %}
+
+{# Un bloque por campo visible: etiqueta, campo, ayuda y errores; row y g-3 forman la rejilla #}
+<div class="row g-3 mb-3">
+{% for campo in form.visible_fields %}
+    <div class="col-12 {% if dos_columnas and not campo|es_lista %}col-md-6{% endif %}">
+        {% if campo|es_casilla %}
+            <div class="form-check form-switch">
+                {{ campo|bootstrap }}
+                <label class="form-check-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            </div>
+        {% else %}
+            <label class="form-label fw-semibold mb-1" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo|bootstrap }}
+        {% endif %}
+        {% for error in campo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        {% if campo.help_text %}
+            {# Las ayudas largas (como los requisitos de la contraseña) quedan plegadas detrás de un enlace #}
+            {% if campo.help_text|length > 120 %}
+                <a class="form-text text-decoration-none d-inline-block" data-bs-toggle="collapse" href="#ayuda-{{ campo.html_name }}" role="button" aria-expanded="false">
+                    <i class="bi bi-info-circle me-1"></i>Ver requisitos
+                </a>
+                <div class="collapse form-text" id="ayuda-{{ campo.html_name }}">{{ campo.help_text|safe }}</div>
+            {% else %}
+                <div class="form-text">{{ campo.help_text|safe }}</div>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endfor %}
+</div>

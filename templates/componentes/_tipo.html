@@ -1,0 +1,8 @@
+{# Etiqueta de color según el tipo de movimiento: verde entra, rojo sale, azul se mueve entre cuentas #}
+{% if mov.tipo == 'deposito' %}
+    <span class="badge rounded-pill text-bg-success"><i class="bi bi-arrow-down-left me-1"></i>{{ mov.get_tipo_display }}</span>
+{% elif mov.tipo == 'retiro' %}
+    <span class="badge rounded-pill text-bg-danger"><i class="bi bi-arrow-up-right me-1"></i>{{ mov.get_tipo_display }}</span>
+{% else %}
+    <span class="badge rounded-pill text-bg-primary"><i class="bi bi-arrow-left-right me-1"></i>{{ mov.get_tipo_display }}</span>
+{% endif %}
