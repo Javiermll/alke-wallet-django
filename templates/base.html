@@ -1,5 +1,5 @@
-{# alke_wallet/templates/base.html #}
-
+{# Carga la librería que permite usar {% static %} para apuntar a los archivos estáticos #}
+{% load static %}
 {# Plantilla base: el diseño común que heredan todas las páginas #}
 <!DOCTYPE html>
 <html lang="es">
@@ -10,36 +10,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# Título de la pestaña: cada página puede reemplazar este bloque #}
     <title>{% block titulo %}Alke Wallet{% endblock %}</title>
-    {# Estilo mínimo temporal; en la etapa 7 se reemplaza por un archivo CSS estático #}
-    <style>
-        body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
-        nav a { margin-right: 1rem; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
-        .mensajes { list-style: none; padding: 0; }
-        .mensajes li { padding: 0.6rem; margin-bottom: 0.4rem; border-radius: 4px; background: #eee; }
-        .mensajes .success { background: #d4edda; }
-        .mensajes .error { background: #f8d7da; }
-        .errorlist { color: #b00020; }
-    </style>
+    {# Ícono de la pestaña del navegador: usa el mismo logo #}
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+    {# Hoja de estilos de todo el sitio; static busca el archivo en la carpeta static/ #}
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
 <body>
-    {# Encabezado con el nombre del sitio y el menú #}
+    {# Encabezado con la marca y el menú #}
     <header>
-        <h1>Alke Wallet</h1>
+        {# La marca junta el logo y el nombre del sitio #}
+        <div class="marca">
+            <img src="{% static 'img/logo.svg' %}" alt="Logo de Alke Wallet">
+            <h1>Alke Wallet</h1>
+        </div>
         <nav>
-            {# url 'gestion:inicio' busca la dirección por el nombre de la ruta #}
-            <a href="{% url 'gestion:inicio' %}">Inicio</a>
-            {# Enlace al listado de clientes #}
-            <a href="{% url 'gestion:cliente_lista' %}">Clientes</a>
-            {# Enlace al listado de cuentas #}
-            <a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>
-            {# Enlace al listado de transacciones #}
-            <a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>
-            {# Enlace al reporte general #}
-            <a href="{% url 'gestion:reporte' %}">Reporte</a>
-            {# Enlace al panel de administración de Django #}
-            <a href="{% url 'admin:index' %}">Panel de administración</a>
+            {# El menú depende de la sesión y del rol: user viene de django.contrib.auth.context_processors.auth #}
+            {% if user.is_authenticated %}
+                {# url 'gestion:inicio' busca la dirección por el nombre de la ruta #}
+                <a href="{% url 'gestion:inicio' %}">Inicio</a>
+                {% if user.is_staff %}
+                    {# Personal: todas las secciones y el panel de administración #}
+                    <a href="{% url 'gestion:cliente_lista' %}">Clientes</a>
+                    <a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>
+                    <a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>
+                    <a href="{% url 'gestion:reporte' %}">Reporte</a>
+                    <a href="{% url 'admin:index' %}">Panel de administración</a>
+                {% elif user.cliente %}
+                    {# Cliente: su ficha, sus cuentas y sus movimientos #}
+                    <a href="{% url 'gestion:cliente_detalle' user.cliente.pk %}">Mi ficha</a>
+                    <a href="{% url 'gestion:cuenta_lista' %}">Cuentas</a>
+                    <a href="{% url 'gestion:transaccion_lista' %}">Transacciones</a>
+                {% endif %}
+                {# Quién tiene la sesión iniciada y con qué rol #}
+                <span class="sesion">
+                    Sesión: <strong>{{ user.get_username }}</strong>
+                    ({% if user.is_staff %}personal{% elif user.cliente %}cliente{% else %}sin cliente{% endif %})
+                </span>
+                {# Cerrar sesión es un formulario POST con token CSRF, no un enlace #}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Cerrar sesión</button>
+                </form>
+            {% else %}
+                {# Sin sesión, solo se ofrece iniciar sesión #}
+                <a href="{% url 'login' %}">Iniciar sesión</a>
+                <a href="{% url 'registro' %}">Registrarse</a>
+            {% endif %}
         </nav>
     </header>
     <hr>

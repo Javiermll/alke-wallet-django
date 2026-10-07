@@ -1,0 +1,24 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Iniciar sesión · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Iniciar sesión</h2>
+    <p>Ingresa con tu usuario y tu contraseña para ver tus cuentas y movimientos.</p>
+
+    {# method="post" envía los datos al entrar #}
+    <form method="post">
+        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
+        {% csrf_token %}
+        {# Dibuja el usuario y la contraseña, con los mensajes de error si los datos no coinciden #}
+        {{ form.as_p }}
+        {# Dirección a la que se vuelve después de entrar; la entrega LoginView cuando viene de ?next=... #}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit">Entrar</button>
+    </form>
+    {# Enlace para quien todavía no tiene usuario #}
+    <p>¿No tienes cuenta? <a href="{% url 'registro' %}">Regístrate aquí</a>.</p>
+{% endblock %}

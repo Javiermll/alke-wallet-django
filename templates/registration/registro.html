@@ -1,0 +1,21 @@
+{# Hereda el diseño común de base.html #}
+{% extends 'base.html' %}
+
+{# Título de la pestaña del navegador #}
+{% block titulo %}Registro · Alke Wallet{% endblock %}
+
+{# Contenido propio de esta página #}
+{% block contenido %}
+    <h2>Crear mi cuenta</h2>
+    <p>Completa tus datos. Al terminar se abre tu primera cuenta, con saldo cero, y entras al sistema.</p>
+
+    {# method="post" envía los datos al registrarse #}
+    <form method="post">
+        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
+        {% csrf_token %}
+        {# Dibuja todos los campos con su etiqueta, su ayuda y sus mensajes de error #}
+        {{ form.as_p }}
+        <button type="submit">Registrarme</button>
+        <a href="{% url 'login' %}">Ya tengo cuenta</a>
+    </form>
+{% endblock %}
