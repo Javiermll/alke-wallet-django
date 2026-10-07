@@ -15,7 +15,7 @@ La aplicación permitirá a los usuarios crear y gestionar cuentas digitales, re
 | 4 | Consultas personalizadas (`filter`, `exclude`, `annotate`, `raw()`, cursores) | Completada |
 | 5 | Panel de administración | Completada |
 | 6 | Vistas CRUD basadas en clases y templates | Completada |
-| 7 | Autenticación y archivos estáticos | Pendiente |
+| 7 | Autenticación, archivos estáticos, roles, alcance por usuario, registro y perfil | Completada |
 | 8 | Pruebas | Pendiente |
 | 9 | Documentación final y demostración | Pendiente |
 
@@ -119,7 +119,24 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Las pantallas de la aplicación están en `http://127.0.0.1:8000/` (inicio), `/clientes/`, `/cuentas/`, `/transacciones/` y `/reporte/`. El panel de administración está en `http://127.0.0.1:8000/admin/`.
+Las pantallas de la aplicación están en `http://127.0.0.1:8000/` (inicio), `/clientes/`, `/cuentas/`, `/transacciones/`, `/reporte/` y `/perfil/`. El panel de administración está en `http://127.0.0.1:8000/admin/`.
+
+Todas las pantallas piden iniciar sesión, salvo el login (`/acceso/login/`) y el registro (`/registro/`). Para probar los distintos roles:
+
+| Rol | Con qué usuario | Qué ve |
+|---|---|---|
+| Personal | El superusuario del paso 7 | Todas las pantallas, el reporte y el panel de administración |
+| Cliente | `ana`, `luis`, `carla`, `diego` o `marta` (los crea `poblar_datos`) | Solo sus propias cuentas, movimientos y agenda |
+| Sin cliente | Un usuario creado en el panel sin ficha de cliente | Solo el perfil y un aviso en el inicio |
+
+Los usuarios de ejemplo creados por `poblar_datos` usan la clave de demostración `Demo12345!`. Es solo para datos de ejemplo; nunca se usa una clave real en este proyecto.
+
+Para verificar los accesos y la protección CSRF en cualquier momento:
+
+```powershell
+# Prueba roles, alcance por usuario y CSRF con datos temporales (no deja nada en la base de datos)
+python manage.py verificar_accesos
+```
 
 ## Arquitectura
 
@@ -133,27 +150,36 @@ alke_wallet/
 ├── gestion/                   # App principal con la lógica del negocio
 │   ├── management/
 │   │   └── commands/
-│   │       ├── poblar_datos.py    # Carga datos de demostración sin duplicar
-│   │       └── demo_consultas.py  # Ejecuta y muestra todas las consultas
+│   │       ├── poblar_datos.py        # Carga datos de demostración sin duplicar
+│   │       ├── demo_consultas.py      # Ejecuta y muestra todas las consultas
+│   │       └── verificar_accesos.py   # Prueba roles, alcance por usuario y CSRF (no deja datos)
 │   ├── migrations/
 │   │   ├── 0001_initial.py    # Migración inicial: crea las 5 tablas de la app
 │   │   └── 0002_alter_cliente_options_alter_contacto_options_and_more.py  # Nombres legibles (sin cambios en las tablas)
 │   ├── models.py              # Modelos: Moneda, Cliente, Contacto, Cuenta, Transaccion
 │   ├── consultas.py           # Consultas reutilizables: ORM, raw() y cursor (12 funciones)
-│   ├── servicios.py           # registrar_transaccion(): operación atómica con bloqueo de la cuenta de origen
-│   ├── forms.py               # Formularios de clientes, cuentas, transacciones y contactos
+│   ├── servicios.py           # registrar_transaccion() atómica con bloqueo; crear_cliente_con_cuenta() para el registro
+│   ├── mixins.py              # Roles: SoloPersonalMixin y PersonalOClienteMixin
+│   ├── alcance.py             # Filtros por dueño: cada cliente ve solo lo suyo
+│   ├── forms.py               # Formularios de clientes, cuentas, transacciones, contactos y registro
 │   ├── admin.py               # Panel de administración: columnas, búsqueda, filtros y tablas anidadas
-│   ├── views.py               # Vistas basadas en clases: CRUD, inicio y reporte
+│   ├── views.py               # Vistas basadas en clases: CRUD, inicio, reporte, registro y perfil
 │   ├── urls.py                # Rutas de la app, con nombre
 │   └── tests.py               # Pruebas (etapa 8)
 ├── templates/
 │   ├── base.html              # Plantilla común: encabezado, menú, mensajes y pie
-│   ├── inicio.html            # Página de inicio
+│   ├── inicio.html            # Página de inicio (distinta para personal y clientes)
 │   ├── reporte.html           # Reporte general
+│   ├── perfil.html            # Datos de acceso y de cliente de la persona con sesión
+│   ├── 403.html               # Página de acceso denegado
+│   ├── registration/          # login, registro y cambiar_clave
 │   ├── clientes/              # lista, detalle, formulario y confirmar_eliminar
 │   ├── cuentas/               # lista, detalle, formulario y confirmar_eliminar
 │   ├── transacciones/         # lista, detalle y formulario
 │   └── contactos/             # formulario y confirmar_eliminar
+├── static/
+│   ├── css/estilos.css        # Estilos de la aplicación
+│   └── img/logo.svg           # Logo
 ├── docs/
 │   └── capturas/              # Capturas de pantalla usadas en este README
 ├── manage.py                  # Utilidad de línea de comandos de Django
@@ -1095,7 +1121,7 @@ Esto confirma lo que quedó pendiente de la etapa 3: las reglas de `clean()` no 
 **Limitaciones conocidas del panel:**
 
 - **No revisaba el saldo disponible** (resuelto en la etapa 6.1): un retiro o una transferencia mayor que el saldo se guardaba y dejaba la cuenta en negativo. Ahora la regla vive en el modelo y se aplica también en el panel.
-- **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso.
+- **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso. *(Resuelto en la etapa 7: el personal ve todo y un usuario sin cliente recibe un aviso.)*
 
 **Reflexiones:**
 
@@ -1446,9 +1472,9 @@ Las cifras coinciden con las del comando `demo_consultas` de la etapa 4.
 
 **Limitaciones conocidas:**
 
-- **Todavía no hay login.** Cualquier persona que llegue a la dirección ve todas las pantallas, incluido el enlace al panel. La etapa 7 agrega la autenticación.
-- **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso.
-- **El diseño es mínimo.** Hay un bloque de estilos temporal dentro de `base.html`, que la etapa 7 reemplaza por archivos estáticos.
+- **Todavía no hay login.** Cualquier persona que llegue a la dirección ve todas las pantallas, incluido el enlace al panel. *(Resuelto en la etapa 7.)*
+- **El superusuario no tiene un `Cliente` asociado.** Las pantallas de usuario que dependan de `request.user.cliente` deberán contemplar ese caso. *(Resuelto en la etapa 7: el personal ve todo y un usuario sin cliente recibe un aviso.)*
+- **El diseño es mínimo.** Hay un bloque de estilos temporal dentro de `base.html`, que la etapa 7 reemplaza por archivos estáticos. *(Resuelto en la etapa 7.)*
 
 **Reflexiones:**
 
@@ -1457,6 +1483,247 @@ Las cifras coinciden con las del comando `demo_consultas` de la etapa 4.
 - **Validar dos veces tiene sentido:** el formulario da una respuesta rápida y el servicio, con la cuenta bloqueada, da la definitiva.
 - **El historial no se edita:** no hay pantallas ni permisos para modificar movimientos; un error se corrige con un movimiento inverso.
 - **Reutilizar consultas paga:** el reporte, el panel y el comando de demostración comparten `cuentas_con_saldo()`, y sus cifras coinciden.
+
+### Etapa 7: autenticación y archivos estáticos
+
+**Objetivo:** que solo entren personas con sesión iniciada, que cada rol vea lo que le corresponde, que cada cliente vea únicamente sus propios datos, y reemplazar los estilos provisorios por archivos estáticos.
+
+**Rama de trabajo:** `feature/auth`. Esta etapa no cambia los modelos, por lo que no genera migraciones.
+
+**Subetapas:**
+
+| Subetapa | Qué se hizo |
+|---|---|
+| 7.1 | Login y logout con las vistas de `django.contrib.auth` |
+| 7.2 | Archivos estáticos: CSS y logo |
+| 7.3 | Roles: personal, cliente y usuario sin cliente |
+| 7.4 | Alcance por usuario: cada cliente ve solo lo suyo |
+| 7.5 | Registro público de clientes con su primera cuenta |
+| 7.6 | Mi perfil y cambio de contraseña |
+| 7.7 | Verificación de accesos y de la protección CSRF |
+
+#### 7.1 Login y logout
+
+Django 5.1 agregó `LoginRequiredMiddleware`: con él, **todas** las pantallas piden sesión por defecto y solo se publican las que se marcan con `login_not_required`. Es más seguro que proteger cada vista por separado, porque una vista nueva queda protegida aunque se olvide.
+
+| Pieza | Dónde | Qué hace |
+|---|---|---|
+| `LoginRequiredMiddleware` | `MIDDLEWARE`, después de `AuthenticationMiddleware` | Redirige al login a quien no tiene sesión |
+| `LOGIN_URL = 'login'` | `settings.py` | A dónde se envía a quien no ha entrado |
+| `LOGIN_REDIRECT_URL = 'gestion:inicio'` | `settings.py` | A dónde se va después de entrar |
+| `LOGOUT_REDIRECT_URL = 'login'` | `settings.py` | A dónde se va después de salir |
+| `/acceso/login/` | `core/urls.py`, `LoginView` | Pantalla de ingreso; si ya hay sesión, va al inicio |
+| `/acceso/logout/` | `core/urls.py`, `LogoutView` | Cierra la sesión; solo acepta POST |
+
+Cuando alguien intenta entrar a una pantalla sin sesión, el login recibe `?next=/ruta/original/` y, tras entrar, lo devuelve a esa pantalla. El botón «Cerrar sesión» es un formulario POST con token CSRF y no un enlace: así un sitio externo no puede cerrar la sesión de otra persona con solo enlazar una dirección.
+
+![Formulario de ingreso](docs/capturas/95_login_formulario.png)
+
+![Error de credenciales](docs/capturas/96_login_error.png)
+
+![Inicio con la sesión iniciada](docs/capturas/97_inicio_con_sesion.png)
+
+![Redirección al login con ?next=](docs/capturas/98_redireccion_login.png)
+
+![Menú de un cliente, sin enlace al panel](docs/capturas/99_menu_cliente_sin_panel.png)
+
+![El login sin token CSRF es rechazado con 403](docs/capturas/100_csrf_login_403.png)
+
+#### 7.2 Archivos estáticos
+
+Los estilos pasaron del bloque provisorio de `base.html` a `static/css/estilos.css`, y se agregó `static/img/logo.svg`.
+
+| Configuración | Para qué sirve |
+|---|---|
+| `STATIC_URL = 'static/'` | Prefijo de las direcciones de los archivos estáticos |
+| `STATICFILES_DIRS = [BASE_DIR / 'static']` | Carpeta del proyecto donde están los archivos propios |
+| `STATIC_ROOT = BASE_DIR / 'staticfiles'` | Carpeta donde `collectstatic` junta todo para producción |
+
+En los templates se usa `{% load static %}` y `{% static 'css/estilos.css' %}`, de modo que la dirección real la calcula Django. Dos comandos permiten comprobar la configuración:
+
+```powershell
+# Muestra en qué carpeta encuentra Django un archivo estático
+python manage.py findstatic css/estilos.css
+
+# Junta los estáticos propios y los del panel de administración en STATIC_ROOT (se usa al desplegar)
+python manage.py collectstatic
+```
+
+`staticfiles/` se genera con `collectstatic` y no se sube al repositorio.
+
+![Estructura de la carpeta static](docs/capturas/101_static_estructura.png)
+
+![findstatic y collectstatic](docs/capturas/102_findstatic_collectstatic.png)
+
+![Login con estilos](docs/capturas/103_login_con_estilos.png)
+
+![Inicio con estilos](docs/capturas/104_inicio_con_estilos.png)
+
+![Listado con estilos](docs/capturas/105_listado_con_estilos.png)
+
+#### 7.3 Roles
+
+Hay tres tipos de persona con sesión. Se distinguen sin crear tablas nuevas: el personal tiene `is_staff` y un cliente tiene un `Cliente` asociado (relación 1:1).
+
+| Rol | Cómo se detecta | Qué puede hacer |
+|---|---|---|
+| Personal | `user.is_staff` | Todo: clientes, cuentas, movimientos, reporte y panel |
+| Cliente | `hasattr(user, 'cliente')` | Ver su ficha, sus cuentas y sus movimientos; transferir; gestionar su agenda |
+| Sin cliente | Ninguno de los anteriores | Solo ver su perfil y un aviso en el inicio |
+
+`gestion/mixins.py` define dos mixins basados en `UserPassesTestMixin`, que se ponen **primero** en las clases base de cada vista. Si el test falla, la persona recibe una página 403 propia (`templates/403.html`).
+
+| Mixin | Quién pasa | Vistas |
+|---|---|---|
+| `SoloPersonalMixin` | Solo el personal | Listado, alta y baja de clientes; alta, edición y baja de cuentas; reporte |
+| `PersonalOClienteMixin` | Personal y clientes | Ficha y edición de cliente; listado y ficha de cuentas; movimientos; contactos |
+
+El menú de `base.html` también cambia según el rol, pero ocultar un enlace no protege nada: la protección real está en las vistas, y el menú solo evita ofrecer lo que daría 403. `hasattr(user, 'cliente')` se usa en lugar de `user.cliente` porque este último lanza una excepción cuando no hay ficha.
+
+![Mixins de roles en mixins.py](docs/capturas/106_roles_mixins_py.png)
+
+![Matriz de permisos](docs/capturas/107_matriz_permisos.png)
+
+![Menú del personal](docs/capturas/108_menu_personal.png)
+
+![Menú de un cliente](docs/capturas/109_menu_cliente.png)
+
+![Página 403 para un cliente](docs/capturas/110_403_cliente.png)
+
+![Inicio de un usuario sin cliente](docs/capturas/111_inicio_sin_cliente.png)
+
+#### 7.4 Alcance por usuario
+
+Los roles dicen **qué pantallas** puede abrir cada persona; el alcance dice **qué registros**. Un cliente solo ve los suyos, y si escribe en la dirección el número de un registro ajeno recibe **404** y no 403, para no confirmar que ese registro existe.
+
+`gestion/alcance.py` concentra las reglas:
+
+| Función | Qué devuelve |
+|---|---|
+| `limitar_a_cliente(queryset, usuario, campo)` | Deja solo los registros cuyo `campo` apunta al cliente de la sesión; el personal ve todo |
+| `movimientos_visibles(usuario)` | Movimientos donde alguna cuenta del cliente es origen o destino |
+| `cuentas_de_origen(usuario)` | Cuentas activas desde las que se puede sacar dinero: solo las propias |
+| `cuentas_de_destino(usuario)` | Cuentas activas que se pueden recibir: las propias y las de sus contactos |
+
+Las vistas usan estas funciones en `get_queryset()`, de modo que el listado, la ficha, la edición y el borrado aplican el mismo filtro. Además:
+
+- **Movimientos:** el formulario recibe al usuario (`TransaccionForm(usuario=...)`) y ofrece solo las cuentas permitidas. Un retiro solo sale de cuentas propias, una transferencia puede ir a un contacto, y un depósito debe ir a una cuenta propia (regla en `clean()`).
+- **Agenda:** `ContactoCreateView` busca al dueño de la agenda con `cached_property` y no en `dispatch`, para que el rol se revise antes. Con `dispatch`, un usuario sin cliente habría provocado un error 500 en lugar de un 403.
+- **Inicio:** el personal ve los totales del sistema; un cliente ve sus cuentas con saldo y sus últimos movimientos.
+
+| Caso (cliente `carla`) | Resultado |
+|---|---|
+| `/cuentas/` | Solo `0004` |
+| Ficha, cuenta o movimiento de otro cliente | 404 |
+| Destinos de una transferencia | Sus cuentas y las de sus contactos |
+| Depósito a la cuenta de un contacto | Error «Un depósito solo puede ir a una de tus cuentas.» |
+| Retiro desde una cuenta ajena | Rechazado: la opción no está entre las disponibles |
+
+![Inicio de un cliente](docs/capturas/112_inicio_cliente.png)
+
+![Cuentas: solo las propias](docs/capturas/113_cuentas_solo_propias.png)
+
+![Movimientos: solo los propios](docs/capturas/114_movimientos_solo_propios.png)
+
+![404 al abrir la ficha de otro cliente](docs/capturas/115_404_ficha_ajena.png)
+
+![Destinos permitidos en una transferencia](docs/capturas/116_destinos_permitidos.png)
+
+![Depósito a una cuenta ajena rechazado](docs/capturas/117_deposito_ajeno_rechazado.png)
+
+#### 7.5 Registro de clientes
+
+Cualquier persona puede crear su usuario desde `/registro/`. Es, junto con el login, la única pantalla pública: se marca con `login_not_required` en `core/urls.py`.
+
+| Pieza | Qué hace |
+|---|---|
+| `RegistroForm` (`forms.py`) | Extiende `UserCreationForm`: pide usuario, nombre, correo, teléfono (opcional), moneda y contraseña dos veces |
+| Validaciones | Contraseña no débil ni numérica, claves iguales, correo no repetido (sin distinguir mayúsculas) y moneda elegida |
+| `crear_cliente_con_cuenta()` (`servicios.py`) | Crea el cliente y su primera cuenta con saldo cero y el siguiente número libre (`0008`, `0009`...) |
+| `RegistroView` (`views.py`) | Guarda todo, inicia la sesión y lleva al inicio; quien ya tiene sesión es enviado al inicio |
+
+El usuario, el cliente y la cuenta se crean dentro de `transaction.atomic()`: o se crean los tres o no se crea ninguno, y nunca queda un usuario sin ficha. El usuario creado nunca pertenece al personal.
+
+![Enlace de registro en el login](docs/capturas/118_login_con_registro.png)
+
+![Formulario de registro](docs/capturas/119_registro_formulario.png)
+
+![Errores de validación en el registro](docs/capturas/120_registro_errores.png)
+
+![Registro exitoso: inicio con la cuenta nueva](docs/capturas/121_registro_exitoso.png)
+
+![Cliente y cuenta creados, vistos en el panel](docs/capturas/122_admin_cliente_registrado.png)
+
+#### 7.6 Perfil y cambio de contraseña
+
+| Ruta | Vista | Qué muestra o hace |
+|---|---|---|
+| `/perfil/` | `PerfilView` | Usuario, rol y último ingreso; si es cliente, también sus datos de cliente con los enlaces «Editar mis datos» y «Ver mi ficha» |
+| `/perfil/clave/` | `CambiarClaveView` (`PasswordChangeView`) | Pide la contraseña actual y la nueva dos veces, con las validaciones de Django |
+
+El perfil sirve para cualquier rol. «Editar mis datos» reutiliza la edición de cliente de la subetapa 7.4, por lo que un cliente solo puede editar su propia ficha. Al cambiar la contraseña la sesión sigue abierta y se muestra un aviso de éxito.
+
+![Perfil de un cliente](docs/capturas/123_perfil_cliente.png)
+
+![Perfil del personal](docs/capturas/124_perfil_personal.png)
+
+![Edición de los datos propios](docs/capturas/125_editar_mis_datos.png)
+
+![Error al escribir mal la contraseña actual](docs/capturas/126_clave_error.png)
+
+![Contraseña cambiada con aviso de éxito](docs/capturas/127_clave_cambiada.png)
+
+#### 7.7 Verificación de accesos y CSRF
+
+El comando `verificar_accesos` prueba todo lo anterior de una vez. Crea datos temporales (personal, dos clientes con cuenta, un movimiento y una ficha de agenda ajenos, y un usuario sin cliente) dentro de `transaction.atomic()` y los deshace al terminar, así que no deja nada en la base de datos. Usa `Client` de Django, que simula un navegador, con `enforce_csrf_checks=True` para exigir el token como en el navegador real.
+
+```powershell
+python manage.py verificar_accesos
+```
+
+| Grupo | Qué se prueba | Esperado |
+|---|---|---|
+| Sin sesión | Las pantallas llevan al login con `?next=`; login y registro son públicos | 302 / 200 |
+| Personal | Todas las pantallas, incluidas las de otros clientes | 200 |
+| Cliente | Sus pantallas propias | 200 |
+| Cliente | Pantallas del personal | 403 |
+| Cliente | Ficha, cuenta, movimiento y agenda de otro cliente | 404 |
+| Sin cliente | Perfil e inicio | 200 |
+| Sin cliente | Cuentas, transacciones y clientes | 403 |
+| CSRF | Login, registro, logout, cambio de contraseña, nueva transacción y edición, sin token | 403 |
+| Logout | Cerrar sesión con GET | 405 |
+| CSRF | Login con token y clave incorrecta | 200 (se procesa) |
+
+Resultado: **55 de 55 pruebas correctas**. Las pruebas unitarias formales y el informe de pruebas se abordan en la etapa 8.
+
+![Resultado de verificar_accesos](docs/capturas/128_verificar_accesos.png)
+
+**Decisiones:**
+
+| Decisión | Alternativa descartada | Motivo |
+|---|---|---|
+| `LoginRequiredMiddleware` | Un mixin de login en cada vista | Todo queda protegido por defecto; las pantallas públicas son la excepción explícita |
+| Roles con `is_staff` y la relación 1:1 con `Cliente` | Grupos y permisos de Django o un campo `rol` | No agrega tablas ni migraciones y se entiende de un vistazo |
+| Un solo módulo `alcance.py` con las reglas | Filtros repetidos en cada vista | Una regla en un lugar; el listado, la ficha, la edición y el borrado no pueden contradecirse |
+| 404 para registros ajenos | 403 | No confirma que el registro exista |
+| El rol se revisa antes de buscar el registro | Buscar el registro en `dispatch` | Evita un error 500 para un usuario sin cliente |
+| Registro con `atomic()` | Crear usuario, cliente y cuenta por separado | Nunca queda un usuario sin ficha |
+
+**Limitaciones conocidas:**
+
+- **No hay recuperación de contraseña por correo** ni verificación del correo al registrarse; requeriría configurar un servidor de correo.
+- **El número de cuenta es «el mayor más uno».** Con muchos registros simultáneos podría repetirse un número y fallar un registro; para este proyecto es suficiente.
+- **Solo el personal abre cuentas adicionales** y gestiona clientes; un cliente tiene la cuenta inicial del registro.
+- **Los usuarios de ejemplo comparten una clave de demostración**, que debe cambiarse si el sistema se publica.
+- **No hay bloqueo por intentos fallidos de ingreso.**
+
+**Reflexiones:**
+
+- **Proteger por defecto es más seguro:** con el middleware, olvidar marcar una vista deja un efecto visible (pide login), no un agujero.
+- **Un rol no basta:** poder abrir `/cuentas/` no significa poder ver todas las cuentas. Separar roles (qué pantalla) de alcance (qué registro) evitó mezclar ambas reglas.
+- **Ocultar un enlace no es seguridad:** el menú por rol es comodidad; las reglas viven en las vistas y se comprueban con `verificar_accesos`.
+- **El orden importa:** el mixin de rol debe ejecutarse antes de cualquier código que use `request.user.cliente`.
+- **Comprobar con datos temporales** permite repetir las pruebas sin ensuciar la base de datos.
 
 ## Flujo de Git
 
@@ -1467,7 +1734,8 @@ Las cifras coinciden con las del comando `demo_consultas` de la etapa 4.
 | `feature/consultas` | Datos de demostración y consultas personalizadas | Fusionada con `main` |
 | `feature/admin` | Idioma, nombres legibles y panel de administración | Fusionada con `main` |
 | `feature/crud` | Vistas, formularios, servicio de movimientos, contactos y reporte | Fusionada con `main` |
+| `feature/auth` | Login, estáticos, roles, alcance por usuario, registro, perfil y verificación de accesos | Fusionada con `main` |
 
 ## Próximas etapas
 
-Las secciones sobre autenticación y archivos estáticos, pruebas y demostración se agregarán a medida que se completen las etapas correspondientes.
+Las secciones sobre pruebas (etapa 8) y documentación final y demostración (etapa 9) se agregarán a medida que se completen las etapas correspondientes.
