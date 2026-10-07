@@ -15,13 +15,15 @@ from django.views.generic import (
 from . import consultas# Consultas reutilizables de la etapa 4
 from .forms import (   # Formularios de esta app
     ClienteForm, ClienteEdicionForm, CuentaForm, CuentaEdicionForm,
-    TransaccionForm, FiltroTransaccionForm, ContactoForm,
+    TransaccionForm, FiltroTransaccionForm, ContactoForm, RegistroForm,
 )
 from .models import Cliente, Contacto, Cuenta, Moneda, Transaccion# Modelos de esta app
 from .mixins import SoloPersonalMixin, PersonalOClienteMixin# Mixins que limitan cada pantalla según el rol de la persona
 from .servicios import registrar_transaccion # Función que registra movimientos de forma segura
 from django.utils.functional import cached_property# Para recordar un valor calculado dentro de la vista
 from .alcance import limitar_a_cliente, movimientos_visibles# Funciones que limitan los datos al cliente de la sesión
+from django.contrib.auth import login# login inicia la sesión de un usuario desde el código
+
 
 # ============================================================
 # INICIO
@@ -412,3 +414,26 @@ class ReporteView(SoloPersonalMixin, TemplateView):
         contexto['por_mes'] = consultas.movimientos_por_mes()  # Cantidad de movimientos de cada mes
         contexto['total_movimientos'] = Transaccion.objects.count() # Total de movimientos, para comprobar que la tabla por mes suma lo mismo
         return contexto # Devuelve el contexto completo
+
+# ============================================================
+# REGISTRO
+# ============================================================
+
+# Pantalla pública de registro: crea usuario, cliente y primera cuenta, e inicia la sesión
+class RegistroView(FormView):
+    form_class = RegistroForm# Formulario que se usa
+    template_name = 'registration/registro.html'# Template que se muestra
+
+    # Se ejecuta primero; quien ya tiene sesión no necesita registrarse
+    def dispatch(self, request, *args, **kwargs):
+        # Si ya hay sesión iniciada, se va al inicio
+        if request.user.is_authenticated:
+            return redirect('gestion:inicio')
+        return super().dispatch(request, *args, **kwargs)# Si no, sigue el funcionamiento normal de la vista
+
+    # Se ejecuta cuando los datos pasaron todas las validaciones
+    def form_valid(self, form):
+        usuario = form.save()# Guarda usuario, cliente y cuenta
+        login(self.request, usuario)# Inicia la sesión de inmediato, para que no tenga que escribir de nuevo sus datos
+        messages.success(self.request, '¡Bienvenido a Alke Wallet! Tu cuenta quedó creada.')# Aviso de bienvenida
+        return redirect('gestion:inicio')# Va al inicio, donde ve su cuenta
