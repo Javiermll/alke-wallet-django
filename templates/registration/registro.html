@@ -1,21 +1,29 @@
-{# Hereda el diseño común de base.html #}
-{% extends 'base.html' %}
+{# Hereda la portada: esta página solo aporta el formulario de registro #}
+{% extends 'registration/landing.html' %}
 
 {# Título de la pestaña del navegador #}
 {% block titulo %}Registro · Alke Wallet{% endblock %}
 
-{# Contenido propio de esta página #}
-{% block contenido %}
-    <h2>Crear mi cuenta</h2>
-    <p>Completa tus datos. Al terminar se abre tu primera cuenta, con saldo cero, y entras al sistema.</p>
+{# El registro tiene siete campos: se da más ancho a la tarjeta (7 columnas) y menos al texto (5) para poder ponerlos de dos en dos #}
+{% block columna_texto %}col-lg-5{% endblock %}
+{% block columna_acceso %}col-lg-7{% endblock %}
+{% block clase_tarjeta_acceso %}tarjeta-acceso-ancha{% endblock %}
+{# En la columna angosta, las ventajas se apilan una bajo otra en escritorio #}
+{% block columna_ventaja %}col-sm-4 col-lg-12{% endblock %}
+{% block columna_ventaja_2 %}col-sm-4 col-lg-12{% endblock %}
+{% block columna_ventaja_3 %}col-sm-4 col-lg-12{% endblock %}
 
-    {# method="post" envía los datos al registrarse #}
+{# Contenido que se coloca dentro de la tarjeta de acceso de la portada #}
+{% block formulario %}
+    <h2 class="h4 fw-bold">Crea tu cuenta</h2>
+    <p class="text-muted mb-4">Completa tus datos. Al terminar se abre tu primera cuenta, con saldo cero, y entras al sistema.</p>
+
     <form method="post">
-        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
+        {# Token de seguridad CSRF #}
         {% csrf_token %}
-        {# Dibuja todos los campos con su etiqueta, su ayuda y sus mensajes de error #}
-        {{ form.as_p }}
-        <button type="submit">Registrarme</button>
-        <a href="{% url 'login' %}">Ya tengo cuenta</a>
+        {# dos_columnas=True: los campos se acomodan de dos en dos desde tablet, y en una columna en celular #}
+        {% include 'componentes/_campos.html' with dos_columnas=True %}
+        <button type="submit" class="btn btn-primary btn-lg w-100 mt-2"><i class="bi bi-person-plus me-1"></i>Registrarme</button>
     </form>
+    <p class="text-center text-muted mt-4 mb-0">¿Ya tienes usuario? <a href="{% url 'login' %}#acceso" class="fw-semibold">Inicia sesión</a></p>
 {% endblock %}

@@ -6,16 +6,24 @@
 
 {# Contenido propio de esta página #}
 {% block contenido %}
-    <h2>Cambiar mi contraseña</h2>
-    <p>Escribe tu contraseña actual y luego la nueva dos veces.</p>
+    <div class="row justify-content-center">
+        <div class="col-md-9 col-lg-7 col-xl-6">
+            <div class="card">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="fw-bold"><i class="bi bi-key me-2"></i>Cambiar mi contraseña</h2>
+                    <p class="text-muted mb-4">Escribe tu contraseña actual y luego la nueva dos veces.</p>
 
-    {# method="post" envía los datos al guardar #}
-    <form method="post">
-        {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
-        {% csrf_token %}
-        {# Dibuja los tres campos con su ayuda y sus mensajes de error #}
-        {{ form.as_p }}
-        <button type="submit">Cambiar contraseña</button>
-        <a href="{% url 'gestion:perfil' %}">Cancelar</a>
-    </form>
+                    <form method="post">
+                        {# Token de seguridad CSRF #}
+                        {% csrf_token %}
+                        {% include 'componentes/_campos.html' %}
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+                            <a href="{% url 'gestion:perfil' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

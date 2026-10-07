@@ -1,0 +1,162 @@
+{# Portada pública de Alke Wallet: presentación del producto y, en la misma pantalla, el acceso (login o registro) #}
+{# login.html y registro.html heredan de esta plantilla y solo rellenan el bloque "formulario" #}
+{% extends 'base.html' %}
+{% load static %}
+
+{# Reemplaza el cuerpo normal (contenedor centrado) para que la portada use todo el ancho de la pantalla #}
+{% block cuerpo %}
+<main class="flex-grow-1">
+
+    {# ---------- Sección principal: mensaje de bienvenida + tarjeta de acceso ---------- #}
+    <section class="portada">
+        <div class="container py-5">
+            <div class="row align-items-center g-5">
+
+                {# Columna izquierda: el mensaje que invita a usar la plataforma #}
+                {# text-center en celular y tablet; text-lg-start en escritorio, donde el texto va a la izquierda junto a la tarjeta #}
+                {# La clase de ancho de cada columna es un bloque: el login usa 7 + 5 y el registro, que tiene más campos, usa 5 + 7 #}
+                <div class="{% block columna_texto %}col-lg-7{% endblock %} text-white text-center text-lg-start">
+                    <span class="badge rounded-pill portada-etiqueta mb-3"><i class="bi bi-stars me-1"></i>Tu billetera digital</span>
+                    <h1 class="display-4 fw-bold mb-3">Tu dinero,<br>simple y <span class="portada-acento">seguro</span>.</h1>
+                    <p class="lead opacity-75 mb-4">Abre tu cuenta en un minuto, mueve dinero entre cuentas, agenda a tus contactos frecuentes y revisa todos tus movimientos desde cualquier dispositivo.</p>
+
+                    {# Tres ventajas en una fila #}
+                    <div class="row g-3 mb-4">
+                        <div class="{% block columna_ventaja %}col-sm-4{% endblock %}">
+                            <div class="portada-dato justify-content-center justify-content-lg-start"><i class="bi bi-lightning-charge"></i><span>Transferencias al instante</span></div>
+                        </div>
+                        <div class="{% block columna_ventaja_2 %}col-sm-4{% endblock %}">
+                            <div class="portada-dato justify-content-center justify-content-lg-start"><i class="bi bi-currency-exchange"></i><span>Cuentas en varias monedas</span></div>
+                        </div>
+                        <div class="{% block columna_ventaja_3 %}col-sm-4{% endblock %}">
+                            <div class="portada-dato justify-content-center justify-content-lg-start"><i class="bi bi-shield-lock"></i><span>Acceso protegido</span></div>
+                        </div>
+                    </div>
+
+                    {# Tarjeta decorativa (no es un dato real): da un toque de producto financiero; se oculta en pantallas pequeñas #}
+                    {# Va inclinada y desplazada hacia un lado (margen izquierdo), no centrada: eso le da profundidad visual #}
+                    <div class="tarjeta-demo d-none d-md-block ms-md-4 text-start">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <span class="fw-semibold"><i class="bi bi-wallet2 me-1"></i>Alke Wallet</span>
+                            <i class="bi bi-wifi fs-4"></i>
+                        </div>
+                        <div class="tarjeta-demo-numero">•••• •••• •••• 0001</div>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div><div class="small opacity-75">Saldo disponible</div><div class="h4 fw-bold mb-0">$ 115.000</div></div>
+                            <span class="badge text-bg-light">CLP</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Columna derecha: tarjeta de acceso; id="acceso" permite enlazar a ella con #acceso #}
+                <div class="{% block columna_acceso %}col-lg-5{% endblock %}" id="acceso">
+                    <div class="card tarjeta-acceso {% block clase_tarjeta_acceso %}{% endblock %}">
+                        <div class="card-body p-4 p-md-5">
+                            {# Avisos de las vistas (por ejemplo, "sesión cerrada") #}
+                            {% include 'componentes/_mensajes.html' %}
+
+                            {# Pestañas: cambian entre iniciar sesión y registrarse sin salir del diseño de la portada #}
+                            {# resolver_match.url_name es el nombre de la ruta actual y decide cuál pestaña se ve activa #}
+                            {% with ruta=request.resolver_match.url_name %}
+                            <ul class="nav nav-pills nav-fill pestanas-acceso mb-4">
+                                <li class="nav-item"><a class="nav-link {% if ruta == 'login' %}active{% endif %}" href="{% url 'login' %}#acceso">Iniciar sesión</a></li>
+                                <li class="nav-item"><a class="nav-link {% if ruta == 'registro' %}active{% endif %}" href="{% url 'registro' %}#acceso">Crear cuenta</a></li>
+                            </ul>
+                            {% endwith %}
+
+                            {# Aquí va el formulario propio de cada página (login o registro) #}
+                            {% block formulario %}{% endblock %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ---------- Características ---------- #}
+    <section class="py-5">
+        <div class="container py-3">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Todo lo que necesitas en una sola billetera</h2>
+                <p class="text-muted mb-0">Pensada para que manejar tu dinero sea claro y sin complicaciones.</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card h-100 tarjeta-dato text-center p-3">
+                        <div class="card-body">
+                            <span class="icono-dato mb-3"><i class="bi bi-credit-card-2-front"></i></span>
+                            <h3 class="h6 fw-bold">Cuentas y saldos</h3>
+                            <p class="text-muted small mb-0">Abre cuentas en distintas monedas y consulta el saldo de cada una al instante.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card h-100 tarjeta-dato text-center p-3">
+                        <div class="card-body">
+                            <span class="icono-dato mb-3"><i class="bi bi-arrow-left-right"></i></span>
+                            <h3 class="h6 fw-bold">Depósitos y transferencias</h3>
+                            <p class="text-muted small mb-0">Deposita, retira y transfiere. El sistema valida tu saldo antes de cada movimiento.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card h-100 tarjeta-dato text-center p-3">
+                        <div class="card-body">
+                            <span class="icono-dato mb-3"><i class="bi bi-journal-bookmark"></i></span>
+                            <h3 class="h6 fw-bold">Contactos frecuentes</h3>
+                            <p class="text-muted small mb-0">Guarda a las personas a las que les envías dinero y transfiere con un solo clic.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card h-100 tarjeta-dato text-center p-3">
+                        <div class="card-body">
+                            <span class="icono-dato mb-3"><i class="bi bi-clock-history"></i></span>
+                            <h3 class="h6 fw-bold">Historial completo</h3>
+                            <p class="text-muted small mb-0">Filtra tus movimientos por tipo, cuenta o fecha y revisa cada detalle.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ---------- Cómo funciona ---------- #}
+    <section class="py-5 bg-white border-top border-bottom">
+        <div class="container py-3">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Empieza en tres pasos</h2>
+            </div>
+            <div class="row g-4 text-center">
+                <div class="col-md-4">
+                    <span class="paso-numero mb-3">1</span>
+                    <h3 class="h6 fw-bold">Crea tu cuenta</h3>
+                    <p class="text-muted small mb-0">Completa tus datos. Se abre tu primera cuenta, con saldo cero, y entras al sistema.</p>
+                </div>
+                <div class="col-md-4">
+                    <span class="paso-numero mb-3">2</span>
+                    <h3 class="h6 fw-bold">Agrega saldo</h3>
+                    <p class="text-muted small mb-0">Registra un depósito y revisa cómo se actualiza tu saldo de inmediato.</p>
+                </div>
+                <div class="col-md-4">
+                    <span class="paso-numero mb-3">3</span>
+                    <h3 class="h6 fw-bold">Mueve tu dinero</h3>
+                    <p class="text-muted small mb-0">Transfiere a tus contactos y consulta tu historial cuando quieras.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ---------- Llamado final a la acción ---------- #}
+    <section class="py-5">
+        <div class="container">
+            <div class="banda-final text-center text-white p-5">
+                <h2 class="fw-bold text-white">¿Listo para empezar?</h2>
+                <p class="opacity-75 mb-4">Crear tu cuenta toma menos de un minuto.</p>
+                {# Lleva de vuelta a la tarjeta de acceso, arriba #}
+                <a href="{% url 'registro' %}#acceso" class="btn btn-light btn-lg fw-semibold px-5">Crear mi cuenta</a>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

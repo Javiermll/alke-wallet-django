@@ -1,24 +1,24 @@
-{# Hereda el diseño común de base.html #}
-{% extends 'base.html' %}
+{# Hereda la portada: esta página solo aporta el formulario de inicio de sesión #}
+{% extends 'registration/landing.html' %}
 
 {# Título de la pestaña del navegador #}
 {% block titulo %}Iniciar sesión · Alke Wallet{% endblock %}
 
-{# Contenido propio de esta página #}
-{% block contenido %}
-    <h2>Iniciar sesión</h2>
-    <p>Ingresa con tu usuario y tu contraseña para ver tus cuentas y movimientos.</p>
+{# Contenido que se coloca dentro de la tarjeta de acceso de la portada #}
+{% block formulario %}
+    <h2 class="h4 fw-bold">Bienvenido de vuelta</h2>
+    <p class="text-muted mb-4">Ingresa con tu usuario y tu contraseña para ver tus cuentas y movimientos.</p>
 
     {# method="post" envía los datos al entrar #}
     <form method="post">
         {# Token de seguridad CSRF: sin él, Django rechaza el envío del formulario #}
         {% csrf_token %}
         {# Dibuja el usuario y la contraseña, con los mensajes de error si los datos no coinciden #}
-        {{ form.as_p }}
+        {% include 'componentes/_campos.html' %}
         {# Dirección a la que se vuelve después de entrar; la entrega LoginView cuando viene de ?next=... #}
         <input type="hidden" name="next" value="{{ next }}">
-        <button type="submit">Entrar</button>
+        <button type="submit" class="btn btn-primary btn-lg w-100 mt-2"><i class="bi bi-box-arrow-in-right me-1"></i>Entrar</button>
     </form>
     {# Enlace para quien todavía no tiene usuario #}
-    <p>¿No tienes cuenta? <a href="{% url 'registro' %}">Regístrate aquí</a>.</p>
+    <p class="text-center text-muted mt-4 mb-0">¿No tienes cuenta? <a href="{% url 'registro' %}#acceso" class="fw-semibold">Regístrate aquí</a></p>
 {% endblock %}
