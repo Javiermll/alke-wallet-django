@@ -19,14 +19,16 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 - **Panel de administración** de Django con columnas, búsqueda y filtros.
 - **Interfaz moderna y adaptable:** Bootstrap 5, portada de presentación con el inicio de sesión y el registro en la misma pantalla, y diseño pensado para escritorio, tablet y celular.
 - **Páginas de error propias** (403, 404 y 500) y una **ventana de espera** al iniciar sesión o registrarse, que explica la demora cuando el servidor gratuito estaba dormido.
-- **Publicada en Render** con PostgreSQL en Neon: configuración por variables de entorno, archivos estáticos con WhiteNoise, HTTPS y script de construcción. Demostración en línea: <https://alke-wallet.onrender.com>.
-- **244 pruebas automatizadas** y un informe de pruebas.
+- **Publicada en Render** con PostgreSQL en Neon: configuración por variables de entorno, archivos estáticos con WhiteNoise, HTTPS y script de construcción. Demostración en línea: <https://javiermll.github.io/alke-wallet-django/>.
+- **245 pruebas automatizadas** y un informe de pruebas.
 
 ## Demostración en línea
 
-**<https://alke-wallet.onrender.com>** (Render, plan gratuito, con la base de datos en Neon).
+**<https://javiermll.github.io/alke-wallet-django/>** (la aplicación corre en Render, plan gratuito, con la base de datos en Neon, en <https://alke-wallet.onrender.com>).
 
-- **Primera visita:** el servidor gratuito se duerme tras 15 minutos sin visitas, así que la primera carga puede tardar cerca de un minuto. Después responde con normalidad. Al iniciar sesión o registrarse, una ventana de espera explica la demora.
+Este es el enlace recomendado: abre una página de espera con la marca del proyecto y entra sola a la aplicación cuando el servidor despierta.
+
+- **Primera visita:** el servidor gratuito se duerme tras 15 minutos sin visitas, así que la primera carga puede tardar cerca de un minuto. Con el enlace de arriba, una página de espera lo explica y redirige sola. Si se escribe directamente la dirección de Render, es Render quien muestra su propia pantalla de arranque, que no se puede personalizar en el plan gratuito. Después de despertar, la aplicación responde con normalidad, y al iniciar sesión o registrarse una ventana de espera explica cualquier demora.
 - **Cómo probarla:** lo más directo es crear una cuenta propia desde "Crear cuenta": el registro es público, toma menos de un minuto y abre una primera cuenta con saldo cero. También existen usuarios de demostración (`ana`, `luis`, `carla`, `diego` y `marta`) con datos de ejemplo; su clave se define con la variable `CLAVE_DEMO` en el panel de Render y no está escrita en el repositorio, por lo que se entrega por separado a quien la necesite.
 - **Panel de administración** (`/admin/`): privado, con clave solo del autor.
 
@@ -58,7 +60,7 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 | 5 | Panel de administración | Completada |
 | 6 | Vistas CRUD basadas en clases y templates | Completada |
 | 7 | Autenticación, archivos estáticos, roles, alcance por usuario, registro y perfil | Completada |
-| 8 | Pruebas automatizadas (239 pruebas en esa etapa; hoy son 244) e informe de pruebas | Completada |
+| 8 | Pruebas automatizadas (239 pruebas en esa etapa; hoy son 245) e informe de pruebas | Completada |
 | 9 | Mejora visual con Bootstrap: portada, diseño responsive, componentes y páginas de error | Completada |
 | 10 | Preparación y despliegue en Render y Neon | Completada |
 | 11 | Revisión final, README final y publicación | En curso |
@@ -81,6 +83,7 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 | dj-database-url | 3.1.2 | Convierte la variable `DATABASE_URL` en la configuración de base de datos de Django |
 | Render | plan gratuito | Alojamiento de la aplicación en línea |
 | Neon | plan gratuito | PostgreSQL en la nube para producción |
+| GitHub Pages | gratuito | Aloja la página de espera (`docs/index.html`) que despierta la demostración |
 | Visual Studio Code | última versión | Editor |
 | Git y GitHub | - | Control de versiones |
 
@@ -199,7 +202,7 @@ python manage.py verificar_accesos
 
 ## Pruebas
 
-El proyecto tiene **244 pruebas automatizadas** en `gestion/tests/`, un archivo por bloque: modelos, servicios, consultas, formularios, vistas, seguridad, la comprobación de salud (`test_salud.py`) y el comando `crear_superusuario` (`test_comandos.py`). Se ejecutan con SQLite (deja `DB_ENGINE=sqlite` en `.env`):
+El proyecto tiene **245 pruebas automatizadas** en `gestion/tests/`, un archivo por bloque: modelos, servicios, consultas, formularios, vistas, seguridad, la comprobación de salud (`test_salud.py`) y el comando `crear_superusuario` (`test_comandos.py`). Se ejecutan con SQLite (deja `DB_ENGINE=sqlite` en `.env`):
 
 ```powershell
 # Ejecuta todas las pruebas; Django usa una base temporal y no toca tus datos
@@ -209,7 +212,7 @@ python manage.py test gestion
 python manage.py test gestion.tests.test_seguridad -v 2
 ```
 
-Resultado esperado: `Ran 244 tests` y `OK`. Las primeras 239 son las de la [etapa 8](#etapa-8-pruebas-automatizadas) y están documentadas, junto con la verificación de que detectan fallos, en [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx). Las 5 restantes se agregaron en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render): 1 del endpoint `/salud/` y 4 del comando `crear_superusuario`.
+Resultado esperado: `Ran 245 tests` y `OK`. Las primeras 239 son las de la [etapa 8](#etapa-8-pruebas-automatizadas) y están documentadas, junto con la verificación de que detectan fallos, en [`docs/informe_pruebas.docx`](docs/informe_pruebas.docx). Las 6 restantes se agregaron en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render): 2 del endpoint `/salud/` y 4 del comando `crear_superusuario`.
 
 **Instalación desde cero comprobada:** se clonó el repositorio en otra carpeta, se creó un entorno virtual nuevo, se instalaron las dependencias, se copió `.env.example` a `.env`, se aplicaron las migraciones, se cargaron los datos de ejemplo y las pruebas (239 en ese momento) terminaron en `OK`.
 
@@ -246,7 +249,7 @@ alke_wallet/
 │   ├── admin.py               # Panel de administración: columnas, búsqueda, filtros y tablas anidadas
 │   ├── views.py               # Vistas basadas en clases: CRUD, inicio, reporte, registro, perfil y salud
 │   ├── urls.py                # Rutas de la app, con nombre
-│   └── tests/                 # Pruebas automatizadas, un archivo por bloque (244 en total)
+│   └── tests/                 # Pruebas automatizadas, un archivo por bloque (245 en total)
 ├── templates/
 │   ├── base.html              # Plantilla común: menú, mensajes y pie de página
 │   ├── inicio.html            # Página de inicio (distinta para personal y clientes)
@@ -265,6 +268,8 @@ alke_wallet/
 │   ├── js/app.js              # Ver contraseña, evitar doble envío, avisos que se cierran y ventana de espera
 │   └── img/logo.svg           # Logo
 ├── docs/
+│   ├── index.html             # Página de espera (GitHub Pages): despierta la demostración y redirige a ella
+│   ├── logo.svg               # Logo de la página de espera
 │   ├── capturas/              # Capturas de pantalla usadas en este README
 │   ├── vista_previa/          # Capturas del nuevo diseño en escritorio, tablet y celular
 │   └── informe_pruebas.docx   # Informe de pruebas con casos, resultados y evidencias
@@ -1861,7 +1866,7 @@ OK
 
 ![verificar_accesos: 55 de 55 comprobaciones correctas](docs/capturas/142_pruebas_correctas.png)
 
-> **Nota:** el total posterior es de 244 pruebas. Las 5 pruebas adicionales (`test_salud.py` y `test_comandos.py`) se agregaron en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render).
+> **Nota:** el total posterior es de 245 pruebas. Las 6 pruebas adicionales (`test_salud.py` y `test_comandos.py`) se agregaron en la [etapa 10](#etapa-10-preparación-para-el-despliegue-en-render).
 
 **Qué se aprendió y decisiones:**
 
@@ -2055,7 +2060,7 @@ Los montos pasaron de `$115000,00` a `$115.000,00`. Django solo trae el formato 
 | 10.4 | Seguridad en producción y registros |
 | 10.5 | Comando `crear_superusuario` |
 | 10.6 | `build.sh`, `render.yaml` y `.gitattributes` |
-| 10.7 | Endpoint `/salud/` y ventana de espera |
+| 10.7 | Endpoint `/salud/`, ventana de espera y página puente en GitHub Pages |
 | 10.8 | Verificación simulando la producción en el equipo |
 | 10.9 | Base de datos en Neon |
 | 10.10 | Despliegue en Render y verificación en línea |
@@ -2132,9 +2137,9 @@ Tiene 4 pruebas en `gestion/tests/test_comandos.py`: crea el superusuario, no ha
 
 `.gitattributes` fuerza saltos de línea LF en `*.sh`, `render.yaml` y `requirements.txt`. Con los saltos de Windows (CRLF), Linux no puede ejecutar `build.sh`.
 
-#### 10.7 Endpoint `/salud/` y ventana de espera
+#### 10.7 Endpoint `/salud/`, ventana de espera y página puente
 
-`/salud/` responde `{"estado": "ok"}` sin sesión ni consulta a la base de datos, y tiene una prueba. La usa Render para saber que la aplicación arrancó.
+`/salud/` responde `{"estado": "ok"}` sin sesión ni consulta a la base de datos, y tiene dos pruebas. La usan dos cosas: Render, para saber que la aplicación arrancó, y la página puente (más abajo). Incluye el encabezado `Access-Control-Allow-Origin: *`, que permite que una página de otro dominio lea la respuesta; no expone ningún dato.
 
 **Ventana de espera:** el plan gratuito de Render duerme el servicio tras 15 minutos sin visitas y la primera respuesta puede tardar cerca de un minuto; la base de Neon también se suspende por inactividad. Al enviar el formulario de inicio de sesión o el de registro, la aplicación muestra una ventana con un indicador de carga cuyo mensaje cambia con el tiempo:
 
@@ -2145,7 +2150,16 @@ Tiene 4 pruebas en `gestion/tests/test_comandos.py`: crea el superusuario, no ha
 | 20 segundos | "Despertando el servidor…", con la explicación de que la demostración usa un servidor gratuito |
 | 75 segundos | Aparece el botón "Reintentar" |
 
-Desaparece sola: cuando el servidor responde, el navegador carga la página siguiente. Se activa con el atributo `data-espera` en el formulario y se implementa en `static/js/app.js`. Una página puente en GitHub Pages que sondeara `/salud/` desde otro dominio se consideró y se descartó por ser más llamativa: no existe ningún `docs/index.html` en el proyecto, y `/salud/` solo la consulta Render. La primera carga con el servicio dormido la muestra Render con su propia pantalla, que no se puede personalizar en el plan gratuito; la ventana cubre lo que ocurre después.
+Desaparece sola: cuando el servidor responde, el navegador carga la página siguiente. Se activa con el atributo `data-espera` en el formulario y se implementa en `static/js/app.js`. La primera carga con el servicio dormido, en cambio, la muestra Render con su propia pantalla de arranque, y eso no se puede personalizar en el plan gratuito. Para que quien llega desde el README o el portafolio no vea esa pantalla, existe una **página puente**:
+
+| Pieza | Qué hace |
+|---|---|
+| `docs/index.html` | Página estática, publicada con GitHub Pages, con el mismo diseño de la aplicación: mensaje "Preparando la demostración…", barra de progreso, contador de segundos y consejos que rotan |
+| Sondeo de `/salud/` | Cada 3 segundos pregunta a la aplicación si ya despertó. Mientras Render arranca, su pantalla de espera no incluye el permiso (CORS), la consulta falla y se sigue esperando; cuando la aplicación responde `{"estado": "ok"}`, redirige sola |
+| Límite de espera | A los 150 segundos ofrece un botón "Reintentar" |
+| Enlace directo | Siempre muestra "Ir directo a la aplicación" |
+
+Se publica en <https://javiermll.github.io/alke-wallet-django/> (GitHub: **Settings → Pages**, rama `main`, carpeta `/docs`; el archivo `docs/.nojekyll` evita que GitHub lo procese con Jekyll). Es el enlace que se usa en el README y en el portafolio. Quien escriba directamente la dirección de Render seguirá viendo la pantalla de Render. La ventana de espera de la aplicación sigue cubriendo la demora al iniciar sesión o registrarse. Una primera versión de esta idea se descartó por ser más llamativa que la ventana; se retomó al comprobar que la alternativa era la pantalla de Render. La ventana cubre lo que ocurre dentro de la aplicación, ya cargada.
 
 #### 10.8 Verificación simulando la producción
 
@@ -2165,7 +2179,7 @@ Con `DEBUG=False`, `SECRET_KEY` y `DATABASE_URL` definidos, una base temporal y 
 | Inicio de sesión de un cliente | 302 al inicio; cookies de sesión y CSRF con `secure` |
 | Arrancar sin `SECRET_KEY` | `ImproperlyConfigured` |
 
-Las 244 pruebas pasan. `check --deploy` informa un error por el backend de correo de consola (la aplicación no envía correos) y avisos de HSTS que se dejaron sin cambiar a propósito. Gunicorn no corre en Windows, así que la verificación usa el cliente de pruebas de Django, que recorre las mismas capas (incluido WhiteNoise); el arranque con gunicorn solo se podrá comprobar en Render.
+Las 245 pruebas pasan. `check --deploy` informa un error por el backend de correo de consola (la aplicación no envía correos) y avisos de HSTS que se dejaron sin cambiar a propósito. Gunicorn no corre en Windows, así que la verificación usa el cliente de pruebas de Django, que recorre las mismas capas (incluido WhiteNoise); el arranque con gunicorn solo se podrá comprobar en Render.
 
 #### 10.9 Base de datos en Neon
 
@@ -2190,6 +2204,7 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 | `poblar_datos` en cada construcción | Cargarlo una vez a mano | Es idempotente y deja la demostración siempre disponible |
 | Clave de demostración solo para clientes, definida con `CLAVE_DEMO` en el panel de Render y fuera del repositorio | Publicar también la del administrador, o escribir la clave en el README | El personal puede borrar todos los datos, y una clave escrita en el repositorio la detectan los escáneres de secretos |
 | Cadena directa de Neon | Cadena con pooler | El pooler puede dar problemas con los cursores de Django |
+| Página puente en GitHub Pages como enlace público | Mantener el servicio despierto con un monitor, o pasar a un plan de pago | Es gratis y no consume las 750 horas gratuitas mensuales de Render, que se reparten entre todos los servicios gratuitos de la cuenta |
 
 **Incidencias resueltas:**
 
@@ -2209,6 +2224,7 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 | `main` publicada en GitHub (15 commits y 3 ramas), tras revisar que no se filtraran claves | Listo |
 | Servicio creado en Render como Blueprint desde `render.yaml`, con los valores privados cargados en el panel | Listo |
 | Verificación en línea | Listo |
+| Página puente (`docs/index.html`) publicada y probada con GitHub Pages | Pendiente |
 
 **Servicio:** `alke-wallet`, plan gratuito, rama `main`, dirección <https://alke-wallet.onrender.com>. Se creó desde **New + → Blueprint**, que lee `render.yaml`. Los valores privados (`DATABASE_URL`, `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` y `CLAVE_DEMO`) se escribieron a mano en el panel y no existen en el repositorio. En cada construcción se ejecuta `build.sh` y luego arranca gunicorn. Por defecto, Render vuelve a desplegar cada vez que se publica un cambio en `main`.
 
@@ -2265,13 +2281,15 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 
 | Subetapa | Qué se hizo |
 |---|---|
-| 11.1 | Revisión del repositorio: sin `.env`, base de datos, entornos virtuales ni claves escritas en el código; `.gitignore` y `.env.example` al día; migraciones sin cambios pendientes; dependencias con versiones fijas; instalación desde cero comprobada (239 pruebas en `OK` en ese momento; hoy son 244) |
+| 11.1 | Revisión del repositorio: sin `.env`, base de datos, entornos virtuales ni claves escritas en el código; `.gitignore` y `.env.example` al día; migraciones sin cambios pendientes; dependencias con versiones fijas; instalación desde cero comprobada (239 pruebas en `OK` en ese momento; hoy son 245) |
 | 11.2 | README completo con la documentación por etapa, que se usa para generar el documento técnico en Word |
 
 **Pendiente:**
 
+- Activar GitHub Pages (Settings → Pages → rama `main`, carpeta `/docs`) y comprobar la página de espera.
+
 - Versión resumida del README para quien solo quiera inspeccionar el proyecto, con el detalle de cada etapa en el documento Word.
-- Actualizar el informe de pruebas con el total actual (244).
+- Actualizar el informe de pruebas con el total actual (245).
 - Demostración funcional en video y tarjeta del proyecto en el portafolio.
 
 ## Flujo de Git
@@ -2289,6 +2307,7 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 | `feature/bootstrap` | Rediseño con Bootstrap: portada, componentes, diseño responsive, páginas de error y formato de montos | Fusionada con `main` (7 commits por tema, fast-forward) |
 | `feature/espera` | Endpoint `/salud/` y ventana de espera al iniciar sesión o registrarse | Fusionada con `main` |
 | `feature/render` | Configuración de producción, `crear_superusuario`, `build.sh`, `render.yaml` y actualización del README | Fusionada con `main` |
+| `feature/puente` | Página de espera en GitHub Pages y permiso CORS en `/salud/` | Fusionada con `main` |
 
 ## Mejoras futuras
 
