@@ -4,7 +4,7 @@ Billetera digital desarrollada con **Django** para el proyecto final del **Módu
 
 ![Portada de Alke Wallet](docs/vista_previa/escritorio_portada.png)
 
-**[Demostración en línea](https://javiermll.github.io/alke-wallet-django/)** · **[Documentación técnica (PDF)](docs/Alke_Wallet_Documentacion_Tecnica.pdf)** · [Informe de pruebas](docs/informe_pruebas.docx) · [Autor](#autor)
+**[Demostración en línea](https://javiermll.github.io/alke-wallet-django/)** · **[Documentación técnica (PDF)](docs/Alke_Wallet_Documentacion_Tecnica.pdf)** · [Informe de pruebas (PDF)](docs/informe_pruebas.pdf) · [Autor](#autor)
 
 ## Demostración en línea
 
@@ -146,7 +146,7 @@ python manage.py test gestion
 python manage.py verificar_accesos
 ```
 
-Resultado esperado: `Ran 245 tests` y `OK`. El [informe de pruebas](docs/informe_pruebas.docx) documenta los casos, los resultados y la verificación de que las pruebas detectan fallos; corresponde a las primeras 239 pruebas, y su actualización a 245 está pendiente.
+Resultado esperado: `Ran 245 tests` y `OK`. El [informe de pruebas](docs/informe_pruebas.pdf) documenta los casos, los resultados y la verificación de que las pruebas detectan fallos, incluidas las 245 pruebas actuales.
 
 ## Despliegue
 
