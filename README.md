@@ -19,8 +19,16 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 - **Panel de administración** de Django con columnas, búsqueda y filtros.
 - **Interfaz moderna y adaptable:** Bootstrap 5, portada de presentación con el inicio de sesión y el registro en la misma pantalla, y diseño pensado para escritorio, tablet y celular.
 - **Páginas de error propias** (403, 404 y 500) y una **ventana de espera** al iniciar sesión o registrarse, que explica la demora cuando el servidor gratuito estaba dormido.
-- **Preparada para publicarse en Render** con PostgreSQL en Neon (configuración por variables de entorno, archivos estáticos con WhiteNoise, HTTPS y script de construcción). El despliegue está en curso.
+- **Publicada en Render** con PostgreSQL en Neon: configuración por variables de entorno, archivos estáticos con WhiteNoise, HTTPS y script de construcción. Demostración en línea: <https://alke-wallet.onrender.com>.
 - **244 pruebas automatizadas** y un informe de pruebas.
+
+## Demostración en línea
+
+**<https://alke-wallet.onrender.com>** (Render, plan gratuito, con la base de datos en Neon).
+
+- **Primera visita:** el servidor gratuito se duerme tras 15 minutos sin visitas, así que la primera carga puede tardar cerca de un minuto. Después responde con normalidad. Al iniciar sesión o registrarse, una ventana de espera explica la demora.
+- **Cómo probarla:** se puede crear una cuenta propia desde "Crear cuenta" (el registro es público y abre una primera cuenta con saldo cero), o entrar con los usuarios de demostración `ana`, `luis`, `carla`, `diego` o `marta`. La clave de esos usuarios se define con la variable `CLAVE_DEMO` en el panel de Render y no está escrita en el repositorio; se entrega por separado a quien evalúe el proyecto.
+- **Panel de administración** (`/admin/`): privado, con clave solo del autor.
 
 ## Requisitos del proyecto y dónde están
 
@@ -52,8 +60,8 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 | 7 | Autenticación, archivos estáticos, roles, alcance por usuario, registro y perfil | Completada |
 | 8 | Pruebas automatizadas (239 pruebas en esa etapa; hoy son 244) e informe de pruebas | Completada |
 | 9 | Mejora visual con Bootstrap: portada, diseño responsive, componentes y páginas de error | Completada |
-| 10 | Preparación para el despliegue en Render y Neon | En curso (código y base de datos listos; falta crear el servicio) |
-| 11 | Revisión final, README final y publicación | Pendiente |
+| 10 | Preparación y despliegue en Render y Neon | Completada |
+| 11 | Revisión final, README final y publicación | En curso |
 
 ## Tecnologías
 
@@ -71,7 +79,7 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 | gunicorn | 26.2.0 | Servidor que ejecuta la aplicación en producción (solo en Linux; no corre en Windows) |
 | WhiteNoise | 6.12.0 | Sirve los archivos estáticos desde la propia aplicación |
 | dj-database-url | 3.1.2 | Convierte la variable `DATABASE_URL` en la configuración de base de datos de Django |
-| Render | plan gratuito | Alojamiento de la aplicación (despliegue en curso) |
+| Render | plan gratuito | Alojamiento de la aplicación en línea |
 | Neon | plan gratuito | PostgreSQL en la nube para producción |
 | Visual Studio Code | última versión | Editor |
 | Git y GitHub | - | Control de versiones |
@@ -178,7 +186,7 @@ Todas las pantallas piden iniciar sesión, salvo el login (`/acceso/login/`) y e
 | Cliente | `ana`, `luis`, `carla`, `diego` o `marta` (los crea `poblar_datos`) | Solo sus propias cuentas, movimientos y agenda |
 | Sin cliente | Un usuario creado en el panel sin ficha de cliente | Solo el perfil y un aviso en el inicio |
 
-Al crear los usuarios de ejemplo, `poblar_datos` genera una clave aleatoria y la muestra una sola vez en pantalla. Si se prefiere una clave propia para la demostración, se define en el archivo `.env` con la variable `CLAVE_DEMO` (ese archivo no se sube al repositorio). El código no contiene ninguna clave escrita.
+Al crear los usuarios de ejemplo, `poblar_datos` genera una clave aleatoria y la muestra una sola vez en pantalla. Si se prefiere una clave propia para la demostración, se define en el archivo `.env` con la variable `CLAVE_DEMO` (ese archivo no se sube al repositorio). El código no contiene ninguna clave escrita. En la demostración en línea la clave se define con la variable `CLAVE_DEMO` en el panel de Render.
 
 Con `DEBUG=True`, las tres páginas de error se pueden previsualizar en `http://127.0.0.1:8000/vista-403/`, `/vista-404/` y `/vista-500/`. Esas rutas solo existen en desarrollo; con `DEBUG=False` Django usa directamente `403.html`, `404.html` y `500.html`.
 
@@ -967,7 +975,7 @@ Las consultas quedaron como funciones en `gestion/consultas.py`, que se reutiliz
 | `buscar_clientes_sql(texto)` | `raw()` con parámetros |
 | `saldos_sql()` | Cursor con SQL puro |
 
-El comando `python manage.py demo_consultas` ejecuta las diez y termina con un control que compara el saldo del ORM con el del SQL puro (`coinciden todas las cuentas: True`).
+El comando `python manage.py demo_consultas` ejecuta las diez consultas de esta etapa (en la etapa 6 se sumaron dos funciones más para el reporte, hasta las 12 que tiene hoy `consultas.py`) y termina con un control que compara el saldo del ORM con el del SQL puro (`coinciden todas las cuentas: True`).
 
 **Resultados, idénticos en SQLite y PostgreSQL:**
 
@@ -2035,7 +2043,7 @@ Los montos pasaron de `$115000,00` a `$115.000,00`. Django solo trae el formato 
 
 **Objetivo:** dejar el proyecto listo para publicarse en Render (aplicación) con PostgreSQL en Neon (base de datos), sin escribir claves en el código y sin romper el funcionamiento local.
 
-**Rama de trabajo:** `feature/espera` (endpoint de salud y ventana de espera, ya fusionada) y `feature/render` (configuración de producción, con los commits listos). Esta etapa no cambia los modelos, por lo que no genera migraciones.
+**Ramas de trabajo:** `feature/espera` (endpoint de salud y ventana de espera) y `feature/render` (configuración de producción), ambas ya fusionadas con `main`. Esta etapa no cambia los modelos, por lo que no genera migraciones.
 
 **Subetapas:**
 
@@ -2050,7 +2058,7 @@ Los montos pasaron de `$115000,00` a `$115.000,00`. Django solo trae el formato 
 | 10.7 | Endpoint `/salud/` y ventana de espera |
 | 10.8 | Verificación simulando la producción en el equipo |
 | 10.9 | Base de datos en Neon |
-| 10.10 | Pendiente: crear el servicio en Render |
+| 10.10 | Despliegue en Render y verificación en línea |
 
 #### 10.1 Variables de entorno
 
@@ -2137,7 +2145,7 @@ Tiene 4 pruebas en `gestion/tests/test_comandos.py`: crea el superusuario, no ha
 | 20 segundos | "Despertando el servidor…", con la explicación de que la demostración usa un servidor gratuito |
 | 75 segundos | Aparece el botón "Reintentar" |
 
-Desaparece sola: cuando el servidor responde, el navegador carga la página siguiente. Se activa con el atributo `data-espera` en el formulario y se implementa en `static/js/app.js`. Una página puente en GitHub Pages se consideró y se descartó por ser más llamativa. La primera carga con el servicio dormido la muestra Render con su propia pantalla, que no se puede personalizar en el plan gratuito; la ventana cubre lo que ocurre después.
+Desaparece sola: cuando el servidor responde, el navegador carga la página siguiente. Se activa con el atributo `data-espera` en el formulario y se implementa en `static/js/app.js`. Una página puente en GitHub Pages que sondeara `/salud/` desde otro dominio se consideró y se descartó por ser más llamativa: no existe ningún `docs/index.html` en el proyecto, y `/salud/` solo la consulta Render. La primera carga con el servicio dormido la muestra Render con su propia pantalla, que no se puede personalizar en el plan gratuito; la ventana cubre lo que ocurre después.
 
 #### 10.8 Verificación simulando la producción
 
@@ -2180,7 +2188,7 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 | Archivos estáticos con código en el nombre solo con `DEBUG=False` | Siempre | Requieren `collectstatic`; en desarrollo y en las pruebas fallarían |
 | Comando `crear_superusuario` | Crear el administrador desde una terminal | Render gratuito no tiene terminal |
 | `poblar_datos` en cada construcción | Cargarlo una vez a mano | Es idempotente y deja la demostración siempre disponible |
-| Clave de demostración pública solo para clientes | Publicar también la del administrador | El personal puede borrar todos los datos; esa clave queda privada |
+| Clave de demostración solo para clientes, definida con `CLAVE_DEMO` en el panel de Render y fuera del repositorio | Publicar también la del administrador, o escribir la clave en el README | El personal puede borrar todos los datos, y una clave escrita en el repositorio la detectan los escáneres de secretos |
 | Cadena directa de Neon | Cadena con pooler | El pooler puede dar problemas con los cursores de Django |
 
 **Incidencias resueltas:**
@@ -2192,18 +2200,37 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 | Los errores no aparecerían en los registros de Render | Con `DEBUG=False` Django no los muestra por defecto | Configuración `LOGGING` hacia la consola |
 | `requirements.txt` con BOM y saltos de Windows | Se generó con PowerShell | Reescrito en UTF-8 sin BOM y con LF |
 
-#### 10.10 Pendiente: crear el servicio en Render
+#### 10.10 Despliegue en Render y verificación en línea
 
 | Paso | Estado |
 |---|---|
 | Código y configuración de producción | Listo |
 | Base de datos en Neon y conexión verificada | Listo |
-| Fusionar `feature/render` con `main` y publicar en GitHub | Pendiente |
-| Crear el servicio en Render desde `render.yaml` y cargar los valores privados | Pendiente |
-| Verificar en línea: inicio de sesión, CRUD, reporte, estilos y páginas de error | Pendiente |
-| Enlace de la demostración en este README | Pendiente |
+| `main` publicada en GitHub (15 commits y 3 ramas), tras revisar que no se filtraran claves | Listo |
+| Servicio creado en Render como Blueprint desde `render.yaml`, con los valores privados cargados en el panel | Listo |
+| Verificación en línea | Listo |
 
-Supuesto por confirmar: `render.yaml` fija `PYTHON_VERSION` en `3.13.5`, mientras que en local se usa Python 3.14.6; si Render no admite esa versión exacta, se ajusta en una línea.
+**Servicio:** `alke-wallet`, plan gratuito, rama `main`, dirección <https://alke-wallet.onrender.com>. Se creó desde **New + → Blueprint**, que lee `render.yaml`. Los valores privados (`DATABASE_URL`, `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` y `CLAVE_DEMO`) se escribieron a mano en el panel y no existen en el repositorio. En cada construcción se ejecuta `build.sh` y luego arranca gunicorn. Por defecto, Render vuelve a desplegar cada vez que se publica un cambio en `main`.
+
+**Verificación externa** (peticiones de solo lectura sin sesión):
+
+| Dirección | Resultado |
+|---|---|
+| `/salud/` | 200, `{"estado": "ok"}` |
+| `/acceso/login/` y `/registro/` | 200 |
+| `/clientes/` sin sesión | 302 hacia el login |
+| Una dirección inexistente | 404 con la página propia |
+| `/static/css/estilos.css` | 200, `text/css` (WhiteNoise) |
+| Cookies | Con el atributo `Secure` |
+| Encabezados | `Strict-Transport-Security` (HSTS), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` y `Referrer-Policy: same-origin` |
+
+**Verificación manual:** se comprobaron en línea el inicio de sesión de un cliente de demostración, el CRUD, el reporte, los estilos y las páginas de error.
+
+**Observaciones:**
+
+- **Versión de Python:** el despliegue se completó con `PYTHON_VERSION=3.13.5`, así que el supuesto quedó confirmado. En local se sigue usando Python 3.14.6.
+- **Región:** `render.yaml` no fija una región, por lo que el servicio usa la que Render asigna por defecto. Si se notara latencia entre la aplicación y la base de Neon, es lo primero que habría que revisar.
+- **Capturas del despliegue:** se agregan al documento técnico y a esta sección cuando estén listas.
 
 **Limitaciones conocidas:**
 
@@ -2229,7 +2256,7 @@ Supuesto por confirmar: `render.yaml` fija `PYTHON_VERSION` en `3.13.5`, mientra
 
 **Pendiente:**
 
-- Publicar el sitio en línea y agregar su enlace (etapa 10).
+- Capturas del despliegue, para el documento técnico.
 - Versión resumida del README para quien solo quiera inspeccionar el proyecto, con el detalle de cada etapa en el documento Word.
 - Actualizar el informe de pruebas con el total actual (244).
 - Demostración funcional en video y tarjeta del proyecto en el portafolio.
@@ -2248,7 +2275,7 @@ Supuesto por confirmar: `render.yaml` fija `PYTHON_VERSION` en `3.13.5`, mientra
 | `fix/clave-demo` | Clave de los usuarios de demostración al azar o desde `.env` | Fusionada con `main` |
 | `feature/bootstrap` | Rediseño con Bootstrap: portada, componentes, diseño responsive, páginas de error y formato de montos | Fusionada con `main` (7 commits por tema, fast-forward) |
 | `feature/espera` | Endpoint `/salud/` y ventana de espera al iniciar sesión o registrarse | Fusionada con `main` |
-| `feature/render` | Configuración de producción, `crear_superusuario`, `build.sh`, `render.yaml` y actualización del README | En curso: commits listos, pendiente de fusionar con `main` |
+| `feature/render` | Configuración de producción, `crear_superusuario`, `build.sh`, `render.yaml` y actualización del README | Fusionada con `main` |
 
 ## Mejoras futuras
 
