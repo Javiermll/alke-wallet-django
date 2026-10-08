@@ -27,7 +27,7 @@ Alke Wallet permite crear y gestionar cuentas digitales, registrar depósitos, r
 **<https://alke-wallet.onrender.com>** (Render, plan gratuito, con la base de datos en Neon).
 
 - **Primera visita:** el servidor gratuito se duerme tras 15 minutos sin visitas, así que la primera carga puede tardar cerca de un minuto. Después responde con normalidad. Al iniciar sesión o registrarse, una ventana de espera explica la demora.
-- **Cómo probarla:** se puede crear una cuenta propia desde "Crear cuenta" (el registro es público y abre una primera cuenta con saldo cero), o entrar con los usuarios de demostración `ana`, `luis`, `carla`, `diego` o `marta`. La clave de esos usuarios se define con la variable `CLAVE_DEMO` en el panel de Render y no está escrita en el repositorio; se entrega por separado a quien evalúe el proyecto.
+- **Cómo probarla:** lo más directo es crear una cuenta propia desde "Crear cuenta": el registro es público, toma menos de un minuto y abre una primera cuenta con saldo cero. También existen usuarios de demostración (`ana`, `luis`, `carla`, `diego` y `marta`) con datos de ejemplo; su clave se define con la variable `CLAVE_DEMO` en el panel de Render y no está escrita en el repositorio, por lo que se entrega por separado a quien la necesite.
 - **Panel de administración** (`/admin/`): privado, con clave solo del autor.
 
 ## Requisitos del proyecto y dónde están
@@ -2230,7 +2230,21 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 
 - **Versión de Python:** el despliegue se completó con `PYTHON_VERSION=3.13.5`, así que el supuesto quedó confirmado. En local se sigue usando Python 3.14.6.
 - **Región:** `render.yaml` no fija una región, por lo que el servicio usa la que Render asigna por defecto. Si se notara latencia entre la aplicación y la base de Neon, es lo primero que habría que revisar.
-- **Capturas del despliegue:** se agregan al documento técnico y a esta sección cuando estén listas.
+**Evidencias:**
+
+![Servicio alke-wallet en estado Live en Render, desplegado desde la rama main](docs/capturas/144_render_servicio_live.png)
+
+![Portada en línea, en alke-wallet.onrender.com](docs/capturas/149_app_en_linea_portada.png)
+
+![Inicio del personal en línea, con los totales y los últimos movimientos](docs/capturas/145_app_en_linea_inicio_personal.png)
+
+![Inicio de un cliente en línea, con su cuenta y su saldo](docs/capturas/148_app_en_linea_inicio_cliente.png)
+
+![Página 404 propia en línea, con el botón que vuelve al panel](docs/capturas/146_app_en_linea_404.png)
+
+![Comprobación de salud en línea: {"estado": "ok"}](docs/capturas/147_app_en_linea_salud.png)
+
+![Tablas gestion_* creadas por las migraciones en la base de Neon](docs/capturas/150_neon_tablas.png)
 
 **Limitaciones conocidas:**
 
@@ -2256,7 +2270,6 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 
 **Pendiente:**
 
-- Capturas del despliegue, para el documento técnico.
 - Versión resumida del README para quien solo quiera inspeccionar el proyecto, con el detalle de cada etapa en el documento Word.
 - Actualizar el informe de pruebas con el total actual (244).
 - Demostración funcional en video y tarjeta del proyecto en el portafolio.
