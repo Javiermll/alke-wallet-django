@@ -1,0 +1,11 @@
+<!-- Logo de Alke Wallet: una billetera sencilla, dibujada con formas básicas -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Alke Wallet">
+    <!-- Cuerpo de la billetera -->
+    <rect x="4" y="14" width="56" height="40" rx="8" fill="#1d4e89"/>
+    <!-- Solapa de la parte de arriba -->
+    <rect x="4" y="10" width="44" height="12" rx="6" fill="#2f6db5"/>
+    <!-- Cierre de la derecha -->
+    <rect x="38" y="28" width="22" height="14" rx="7" fill="#f4f6f9"/>
+    <!-- Botón del cierre -->
+    <circle cx="46" cy="35" r="3" fill="#1d4e89"/>
+</svg>

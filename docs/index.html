@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1d4e89">
+    <title>Alke Wallet · Despertando la demostración</title>
+    <meta name="description" content="Alke Wallet: billetera digital hecha con Django. Esta página prepara la demostración y te lleva a ella.">
+    <meta property="og:title" content="Alke Wallet · Tu billetera digital">
+    <meta property="og:description" content="Gestiona cuentas, mueve dinero y revisa tu historial. Demostración en línea de un proyecto hecho con Django.">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        /* Misma paleta que la aplicación, para que el salto sea continuo */
+        :root { --azul: #1d4e89; --azul-oscuro: #0f2f57; --turquesa: #17b8a6; }
+        body {
+            min-height: 100vh;
+            font-family: "Inter", system-ui, sans-serif;
+            color: #fff;
+            background:
+                radial-gradient(circle at 85% 8%, rgba(23, 184, 166, 0.45), transparent 40%),
+                radial-gradient(circle at 5% 95%, rgba(47, 109, 181, 0.6), transparent 45%),
+                linear-gradient(135deg, var(--azul-oscuro), var(--azul));
+        }
+        .tarjeta {
+            width: 100%;
+            max-width: 32rem;
+            padding: 2.5rem 2rem;
+            border-radius: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+        }
+        .marca { display: inline-flex; align-items: center; gap: .6rem; margin-bottom: 1.5rem; font-weight: 700; font-size: 1.15rem; }
+        .icono {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 4.2rem; height: 4.2rem; border-radius: 1.2rem;
+            background: rgba(255, 255, 255, 0.15); font-size: 2rem; color: #5eead4;
+            animation: latido 1.8s ease-in-out infinite;
+        }
+        @keyframes latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .progress { height: 0.55rem; background: rgba(255, 255, 255, 0.2); border-radius: 1rem; }
+        .progress-bar { background: linear-gradient(90deg, #5eead4, #fff); }
+        .consejo { min-height: 2.6rem; opacity: .8; }
+        @media (prefers-reduced-motion: reduce) { .icono { animation: none; } }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center p-3">
+
+    <main class="tarjeta text-center">
+        <div class="marca"><img src="logo.svg" alt="" width="34" height="34">Alke Wallet</div>
+        <div><span class="icono mb-3" id="icono"><i class="bi bi-wallet2"></i></span></div>
+        <h1 class="h4 fw-bold" id="titulo">Preparando la demostración…</h1>
+        <!-- aria-live hace que los lectores de pantalla anuncien los cambios del estado -->
+        <p class="mb-4 opacity-75" id="estado" aria-live="polite">
+            La demostración usa un servidor gratuito que se duerme cuando no se usa. Puede tardar hasta un minuto en despertar; luego irá rápido.
+        </p>
+
+        <div class="progress mb-2" role="progressbar" aria-label="Progreso de la espera">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" id="barra" style="width: 5%"></div>
+        </div>
+        <div class="small opacity-75 mb-3"><span id="tiempo">0</span> s</div>
+
+        <p class="consejo small mb-3" id="consejo"></p>
+
+        <!-- Se muestra solo si la espera supera el límite -->
+        <div id="acciones" class="d-grid gap-2 d-none mb-3">
+            <button class="btn btn-light btn-lg fw-semibold" id="reintentar"><i class="bi bi-arrow-clockwise me-2"></i>Reintentar</button>
+        </div>
+
+        <a id="enlaceManual" class="btn btn-outline-light btn-sm" href="https://alke-wallet.onrender.com"><i class="bi bi-box-arrow-up-right me-1"></i>Ir directo a la aplicación</a>
+    </main>
+
+<script>
+    /* ---------- CONFIGURACIÓN ---------- */
+    var URL_APP = 'https://alke-wallet.onrender.com';   // Dirección del servicio en Render, sin barra final
+
+    /* ---------- Parámetros de la espera ---------- */
+    var CADA_MS = 3000;          // cada cuánto se pregunta si el servidor ya despertó
+    var LIMITE_S = 150;          // pasado este tiempo se ofrece reintentar
+    var consejos = [
+        'Render gratuito apaga las aplicaciones tras 15 minutos sin visitas.',
+        'Mientras tanto, el servidor arranca Django y se conecta a la base de datos.',
+        'Una vez despierto, la aplicación responde en milisegundos.',
+        'Puedes crear tu propia cuenta desde «Crear cuenta»: toma menos de un minuto.',
+        'Cada acción está protegida con token CSRF y roles de acceso.'
+    ];
+
+    var inicio = Date.now(), listo = false, temporizador;
+    var $ = function (id) { return document.getElementById(id); };
+
+    $('consejo').textContent = consejos[0];
+
+    /* Reloj, barra de progreso y consejos que rotan */
+    setInterval(function () {
+        if (listo) { return; }
+        var seg = Math.floor((Date.now() - inicio) / 1000);
+        $('tiempo').textContent = seg;
+        // La barra avanza rápido al principio y luego se frena: nunca llega al 100% hasta que el servidor responde
+        $('barra').style.width = Math.min(92, 5 + 87 * (1 - Math.exp(-seg / 40))) + '%';
+        $('consejo').textContent = consejos[Math.floor(seg / 8) % consejos.length];
+    }, 1000);
+
+    /* Pregunta a /salud/ de la aplicación. Esa respuesta solo se puede leer cuando la aplicación de verdad está activa:
+       mientras Render arranca, su pantalla de espera no incluye el permiso (CORS) y la consulta falla, así que se sigue esperando. */
+    function preguntar() {
+        if (listo) { return; }
+
+        if ((Date.now() - inicio) / 1000 > LIMITE_S) {
+            $('titulo').textContent = 'Está tardando más de lo normal';
+            $('estado').textContent = 'El servidor sigue arrancando. Puedes reintentar o entrar directo en unos minutos.';
+            $('acciones').classList.remove('d-none');
+            return;
+        }
+
+        var controlador = new AbortController();
+        var tope = setTimeout(function () { controlador.abort(); }, 8000);   // si una pregunta se cuelga, se descarta
+
+        fetch(URL_APP + '/salud/', { signal: controlador.signal, cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (datos) {
+                clearTimeout(tope);
+                if (datos && datos.estado === 'ok') { desperto(); } else { siguiente(); }
+            })
+            .catch(function () { clearTimeout(tope); siguiente(); });
+    }
+
+    function siguiente() { temporizador = setTimeout(preguntar, CADA_MS); }
+
+    function desperto() {
+        listo = true;
+        $('barra').style.width = '100%';
+        $('barra').classList.remove('progress-bar-animated');
+        $('titulo').textContent = '¡Listo! Entrando…';
+        $('estado').textContent = 'El servidor ya está activo. Te llevamos a Alke Wallet.';
+        $('icono').innerHTML = '<i class="bi bi-check2-circle"></i>';
+        setTimeout(function () { window.location.href = URL_APP; }, 700);
+    }
+
+    $('reintentar').addEventListener('click', function () {
+        inicio = Date.now();
+        $('acciones').classList.add('d-none');
+        $('titulo').textContent = 'Preparando la demostración…';
+        clearTimeout(temporizador);
+        preguntar();
+    });
+
+    preguntar();
+</script>
+</body>
+</html>
