@@ -2048,7 +2048,7 @@ Los montos pasaron de `$115000,00` a `$115.000,00`. Django solo trae el formato 
 
 **Objetivo:** dejar el proyecto listo para publicarse en Render (aplicación) con PostgreSQL en Neon (base de datos), sin escribir claves en el código y sin romper el funcionamiento local.
 
-**Ramas de trabajo:** `feature/espera` (endpoint de salud y ventana de espera) y `feature/render` (configuración de producción), ambas ya fusionadas con `main`. Esta etapa no cambia los modelos, por lo que no genera migraciones.
+**Ramas de trabajo:** `feature/espera` (endpoint de salud y ventana de espera), `feature/render` (configuración de producción) y `feature/puente` (página puente en GitHub Pages y permiso CORS en `/salud/`), todas ya fusionadas con `main`. Esta etapa no cambia los modelos, por lo que no genera migraciones.
 
 **Subetapas:**
 
@@ -2159,7 +2159,7 @@ Desaparece sola: cuando el servidor responde, el navegador carga la página sigu
 | Límite de espera | A los 150 segundos ofrece un botón "Reintentar" |
 | Enlace directo | Siempre muestra "Ir directo a la aplicación" |
 
-Se publica en <https://javiermll.github.io/alke-wallet-django/> (GitHub: **Settings → Pages**, rama `main`, carpeta `/docs`; el archivo `docs/.nojekyll` evita que GitHub lo procese con Jekyll). Es el enlace que se usa en el README y en el portafolio. Quien escriba directamente la dirección de Render seguirá viendo la pantalla de Render. La ventana de espera de la aplicación sigue cubriendo la demora al iniciar sesión o registrarse. Una primera versión de esta idea se descartó por ser más llamativa que la ventana; se retomó al comprobar que la alternativa era la pantalla de Render. La ventana cubre lo que ocurre dentro de la aplicación, ya cargada.
+Se publica en <https://javiermll.github.io/alke-wallet-django/> una vez activado GitHub Pages (su estado figura en la subsección 10.10) (GitHub: **Settings → Pages**, rama `main`, carpeta `/docs`; el archivo `docs/.nojekyll` evita que GitHub lo procese con Jekyll). Es el enlace que se usa en el README y en el portafolio. Quien escriba directamente la dirección de Render seguirá viendo la pantalla de Render. La ventana de espera de la aplicación sigue cubriendo la demora al iniciar sesión o registrarse. Una primera versión de esta idea se descartó por ser más llamativa que la ventana; se retomó al comprobar que la alternativa era la pantalla de Render. La ventana cubre lo que ocurre dentro de la aplicación, ya cargada.
 
 #### 10.8 Verificación simulando la producción
 
@@ -2179,7 +2179,7 @@ Con `DEBUG=False`, `SECRET_KEY` y `DATABASE_URL` definidos, una base temporal y 
 | Inicio de sesión de un cliente | 302 al inicio; cookies de sesión y CSRF con `secure` |
 | Arrancar sin `SECRET_KEY` | `ImproperlyConfigured` |
 
-Las 245 pruebas pasan. `check --deploy` informa un error por el backend de correo de consola (la aplicación no envía correos) y avisos de HSTS que se dejaron sin cambiar a propósito. Gunicorn no corre en Windows, así que la verificación usa el cliente de pruebas de Django, que recorre las mismas capas (incluido WhiteNoise); el arranque con gunicorn solo se podrá comprobar en Render.
+Las 245 pruebas pasan. `check --deploy` informa un error por el backend de correo de consola (la aplicación no envía correos) y avisos de HSTS que se dejaron sin cambiar a propósito. Gunicorn no corre en Windows, así que la verificación usa el cliente de pruebas de Django, que recorre las mismas capas (incluido WhiteNoise); el arranque con gunicorn se comprobó después, en Render (subsección 10.10).
 
 #### 10.9 Base de datos en Neon
 
@@ -2221,7 +2221,7 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 |---|---|
 | Código y configuración de producción | Listo |
 | Base de datos en Neon y conexión verificada | Listo |
-| `main` publicada en GitHub (15 commits y 3 ramas), tras revisar que no se filtraran claves | Listo |
+| `main` y las ramas `feature/*` publicadas en GitHub, tras revisar que no se filtraran claves | Listo |
 | Servicio creado en Render como Blueprint desde `render.yaml`, con los valores privados cargados en el panel | Listo |
 | Verificación en línea | Listo |
 | Página puente (`docs/index.html`) publicada y probada con GitHub Pages | Pendiente |
@@ -2250,7 +2250,7 @@ Las dos migraciones aparecieron sin aplicar (`[ ]`), lo que confirma que se cone
 
 ![Servicio alke-wallet en estado Live en Render, desplegado desde la rama main](docs/capturas/144_render_servicio_live.png)
 
-![Portada en línea, en alke-wallet.onrender.com](docs/capturas/149_app_en_linea_portada.png)
+![Portada de la aplicación en línea, servida desde su dirección de Render](docs/capturas/149_app_en_linea_portada.png)
 
 ![Inicio del personal en línea, con los totales y los últimos movimientos](docs/capturas/145_app_en_linea_inicio_personal.png)
 
