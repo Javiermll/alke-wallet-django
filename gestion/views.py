@@ -459,6 +459,11 @@ class CambiarClaveView(SuccessMessageMixin, PasswordChangeView):
 # ============================================================
 
 # Responde {"estado": "ok"} sin consultar la base de datos ni pedir sesión.
-# La usa Render (healthCheckPath) para saber que la aplicación arrancó y puede recibir visitas.
+# La usan dos cosas: Render (healthCheckPath), para saber que la aplicación arrancó, y la página puente de GitHub Pages
+# (docs/index.html), que pregunta cada pocos segundos hasta que el servidor despierte. El encabezado
+# Access-Control-Allow-Origin permite que esa otra página (de otro dominio) lea la respuesta; sin él el navegador la bloquearía.
+# Mientras Render arranca, su propia pantalla de espera no incluye ese encabezado, y así la página puente sabe que aún no está listo.
 def salud(request):
-    return JsonResponse({'estado': 'ok'})# Datos de la respuesta
+    respuesta = JsonResponse({'estado': 'ok'})# Datos de la respuesta
+    respuesta['Access-Control-Allow-Origin'] = '*'# Permite que cualquier página lea esta respuesta (no expone ningún dato)
+    return respuesta
